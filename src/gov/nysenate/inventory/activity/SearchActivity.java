@@ -5,12 +5,6 @@ import gov.nysenate.inventory.android.ClearableAutoCompleteTextView;
 import gov.nysenate.inventory.android.ClearableEditText;
 import gov.nysenate.inventory.android.R;
 import gov.nysenate.inventory.android.RequestTask;
-import gov.nysenate.inventory.android.R.anim;
-import gov.nysenate.inventory.android.R.array;
-import gov.nysenate.inventory.android.R.color;
-import gov.nysenate.inventory.android.R.id;
-import gov.nysenate.inventory.android.R.layout;
-import gov.nysenate.inventory.android.R.menu;
 import gov.nysenate.inventory.model.InvSerialNumber;
 import gov.nysenate.inventory.util.Toasty;
 
@@ -61,7 +55,7 @@ public class SearchActivity extends SenateActivity
     String res = null;
     public String status = null;
     TextView textView;
-    TextView tvBarcode;  
+    TextView tvBarcode;
     TextView tvNuserial;
     TextView tvDescription;
     TextView tvLocation;
@@ -73,52 +67,61 @@ public class SearchActivity extends SenateActivity
     Spinner spinSearchBy;
     int serialLength = 0;
     boolean serialListNeeded = true;
-    private  ArrayList<InvSerialNumber> suggestions;      
+    private ArrayList<InvSerialNumber> suggestions;
     TableRow rwNuserial;
     boolean nuserialLoadDone = false;
-    InputFilter invSerialFilter = new InputFilter() {   
-        @Override  
-        public CharSequence filter(CharSequence arg0, int arg1, int arg2, Spanned arg3, int arg4, int arg5)  
-            {  
-                 for (int k = arg1; k < arg2; k++) {
-                     if (k>0  && arg0.charAt(k) == ',' && acNuserial.getText().toString().endsWith(",") ) {
-                         return "";   
-                     }
-                    /* else if (Character.isSpaceChar(arg0.charAt(k))) {
-                         return ",";   
-                     }*/
-                     else if (!Character.isLetterOrDigit(arg0.charAt(k)) && arg0.charAt(k) != '-' && arg0.charAt(k) != '/' && arg0.charAt(k) != '\\'/* && arg0.charAt(k) != '.' && arg0.charAt(k) != ','*/) {   
-                         return "";   
-                     }   
-                 }   
-             return null;   
-            }   
-    };     
-    
-    AsyncTask<String, String, String> nuserialResponse = new RequestTask(){
+    InputFilter invSerialFilter = new InputFilter()
+    {
+        @Override
+        public CharSequence filter(CharSequence arg0, int arg1, int arg2,
+                Spanned arg3, int arg4, int arg5) {
+            for (int k = arg1; k < arg2; k++) {
+                if (k > 0 && arg0.charAt(k) == ','
+                        && acNuserial.getText().toString().endsWith(",")) {
+                    return "";
+                }
+                /*
+                 * else if (Character.isSpaceChar(arg0.charAt(k))) { return ",";
+                 * }
+                 */
+                else if (!Character.isLetterOrDigit(arg0.charAt(k))
+                        && arg0.charAt(k) != '-' && arg0.charAt(k) != '/'
+                        && arg0.charAt(k) != '\\'/*
+                                                  * && arg0.charAt(k) != '.' &&
+                                                  * arg0.charAt(k) != ','
+                                                  */) {
+                    return "";
+                }
+            }
+            return null;
+        }
+    };
+
+    AsyncTask<String, String, String> nuserialResponse = new RequestTask()
+    {
         @Override
         public void onPreExecute() {
-            
+
         }
+
         public void onPostExecute(Result result) {
-            
+
         }
-        
+
     };
-    
-    //SimpleCursorAdapter serialAdapter;
+
+    // SimpleCursorAdapter serialAdapter;
 
     static Button btnSrchBck;
     Activity currentActivity;
-    
-   
+
     protected ArrayList<InvSerialNumber> serialList = new ArrayList<InvSerialNumber>();
-    //protected ArrayList<InvSerialNumber> serialListOrg;
+    // protected ArrayList<InvSerialNumber> serialListOrg;
     String URL = ""; // this will be initialized once in onCreate() and used for
-    // all server calls.    
-    
+    // all server calls.
+
     InvSerialAdapter serialListAdapter;
-    
+
     String timeoutFrom = "search";
     public final int SEARCH_TIMEOUT = 101, SERIALLIST_TIMEOUT = 102;
 
@@ -146,80 +149,91 @@ public class SearchActivity extends SenateActivity
 
         btnSrchBck = (Button) findViewById(R.id.btnSrchBck);
         btnSrchBck.getBackground().setAlpha(255);
-        
+
         acNuserial = (ClearableAutoCompleteTextView) findViewById(R.id.acNuserial);
-        acNuserial.setFilters(new InputFilter[]{ invSerialFilter});
-        acNuserial.setOnItemClickListener (new OnItemClickListener() {
+        acNuserial.setFilters(new InputFilter[] { invSerialFilter });
+        acNuserial.setOnItemClickListener(new OnItemClickListener()
+        {
             @Override
             public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
                     long arg3) {
-                InvSerialNumber selected = (InvSerialNumber) arg0.getAdapter().getItem(arg2);
+                InvSerialNumber selected = (InvSerialNumber) arg0.getAdapter()
+                        .getItem(arg2);
                 barcode.setText(selected.getNusenate());
-                
-                //Log.i("NUSERIAL CLICK", "Clicked on Item "+selected.getNuserial());
+
+                // Log.i("NUSERIAL CLICK",
+                // "Clicked on Item "+selected.getNuserial());
             }
-        });  
-         
-        acNuserial.addTextChangedListener(new TextWatcher() {
+        });
+
+        acNuserial.addTextChangedListener(new TextWatcher()
+        {
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            public void onTextChanged(CharSequence s, int start, int before,
+                    int count) {
 
                 // call your adapter here
                 String st = s.toString();
-                //Log.i("SERIALTEXTCHANGE", "!!!!Get Serial List:"+st);
+                // Log.i("SERIALTEXTCHANGE", "!!!!Get Serial List:"+st);
                 int recordCount = 0;
                 boolean serialListfromServer = false;
-                if (serialListNeeded || serialLength>st.length()) {
-                    if (serialLength>st.length()) {
+                if (serialListNeeded || serialLength > st.length()) {
+                    if (serialLength > st.length()) {
                         serialListAdapter.setTextColor(false);
                     }
                     recordCount = getSerialList(st);
-                    //Log.i("SERIALTEXTCHANGE", "!!!!Serial Server RecordCount:"+recordCount);
+                    // Log.i("SERIALTEXTCHANGE",
+                    // "!!!!Serial Server RecordCount:"+recordCount);
                     serialListfromServer = true;
                 }
-                //Log.i("SERIALTEXTCHANGE", "!!!!FILTER ON:"+st);
-                /*if (acNuserial.getText().toString().length()<serialLength) {
-                    serialList = (ArrayList<InvSerialNumber>) serialListOrg.clone();
-                    Log.i("TextChanged", "!!!!Restore original list size to "+serialList.size());
-                }*/
+                // Log.i("SERIALTEXTCHANGE", "!!!!FILTER ON:"+st);
+                /*
+                 * if (acNuserial.getText().toString().length()<serialLength) {
+                 * serialList = (ArrayList<InvSerialNumber>)
+                 * serialListOrg.clone(); Log.i("TextChanged",
+                 * "!!!!Restore original list size to "+serialList.size()); }
+                 */
                 serialListAdapter.getFilter().filter(st);
                 if (serialListfromServer) {
-                    //System.out.println(st+" FROM SERVER COUNT:"+recordCount);
+                    // System.out.println(st+" FROM SERVER COUNT:"+recordCount);
                     serialListAdapter.setTextColor(false);
-                    if (recordCount==0) {
-                        acNuserial.setTextColor(getResources().getColor(R.color.redlight));
+                    if (recordCount == 0) {
+                        acNuserial.setTextColor(getResources().getColor(
+                                R.color.redlight));
+                    } else {
+                        acNuserial.setTextColor(getResources().getColor(
+                                R.color.black));
                     }
-                    else {
-                        acNuserial.setTextColor(getResources().getColor(R.color.black));
-                    }
-                }
-                else {
+                } else {
                     serialListAdapter.setTextColor(true);
-                    /*if (serialListAdapter.suggestions==null) {
-                        acNuserial.setTextColor(getResources().getColor(R.color.redlight));
-                        System.out.println(st+" FROM ADAPTER COUNT: NULL(0)");
-                    }
-                    else { if (serialListAdapter.getFilteredCount(st)==0) {            
-                        int cnt = serialListAdapter.getFilteredCount(st);
-                        if (cnt==0) {
-                            System.out.println(st+" FROM ADAPTER FILTER COUNT: "+cnt);
-                            acNuserial.setTextColor(getResources().getColor(R.color.redlight));
-                        }
-                        else {
-                            System.out.println(st+" FROM ADAPTER FILTER COUNT: "+cnt);
-                            acNuserial.setTextColor(getResources().getColor(R.color.black));
-                            }
-                    }
-
-                        
-                    }*/
+                    /*
+                     * if (serialListAdapter.suggestions==null) {
+                     * acNuserial.setTextColor
+                     * (getResources().getColor(R.color.redlight));
+                     * System.out.println(st+" FROM ADAPTER COUNT: NULL(0)"); }
+                     * else { if (serialListAdapter.getFilteredCount(st)==0) {
+                     * int cnt = serialListAdapter.getFilteredCount(st); if
+                     * (cnt==0) {
+                     * System.out.println(st+" FROM ADAPTER FILTER COUNT: "
+                     * +cnt);
+                     * acNuserial.setTextColor(getResources().getColor(R.color
+                     * .redlight)); } else {
+                     * System.out.println(st+" FROM ADAPTER FILTER COUNT: "
+                     * +cnt);
+                     * acNuserial.setTextColor(getResources().getColor(R.color
+                     * .black)); } }
+                     * 
+                     * 
+                     * }
+                     */
                 }
 
             }
 
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count,int after) {
+            public void beforeTextChanged(CharSequence s, int start, int count,
+                    int after) {
                 serialLength = acNuserial.getText().toString().length();
             }
 
@@ -227,35 +241,29 @@ public class SearchActivity extends SenateActivity
             public void afterTextChanged(Editable s) {
 
             }
-            });
-        
-        //getSerialList();
-        acNuserial.setThreshold(3);
-/*        acNuserial.setOnItemSelectedListener(
-                new OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> arg0, View arg1,
-                            int arg2, long arg3) {
-                        String selectedValue = (String) acNuserial.get
-                        Log.i("Serial Number", "VALUE:"+selectedValue);
-                        if (selectedValue.equalsIgnoreCase("By Serial#")) {
-                            Log.i("Search By Change", "Changed to Serial");
-                            barcode.setVisibility(View.GONE);
-                            acNuserial.setVisibility(View.VISIBLE);
-                        }
-                        else {
-                            Log.i("Search By Change", "Changed to Senate Tag#");
-                            acNuserial.setVisibility(View.GONE);
-                            barcode.setVisibility(View.VISIBLE);
-                        }
-                    }
+        });
 
-                    @Override
-                    public void onNothingSelected(AdapterView<?> arg0) {
-                        // TODO Auto-generated method stub
-                        
-                    }
-                });*/
+        // getSerialList();
+        acNuserial.setThreshold(3);
+        /*
+         * acNuserial.setOnItemSelectedListener( new OnItemSelectedListener() {
+         * 
+         * @Override public void onItemSelected(AdapterView<?> arg0, View arg1,
+         * int arg2, long arg3) { String selectedValue = (String) acNuserial.get
+         * Log.i("Serial Number", "VALUE:"+selectedValue); if
+         * (selectedValue.equalsIgnoreCase("By Serial#")) {
+         * Log.i("Search By Change", "Changed to Serial");
+         * barcode.setVisibility(View.GONE);
+         * acNuserial.setVisibility(View.VISIBLE); } else {
+         * Log.i("Search By Change", "Changed to Senate Tag#");
+         * acNuserial.setVisibility(View.GONE);
+         * barcode.setVisibility(View.VISIBLE); } }
+         * 
+         * @Override public void onNothingSelected(AdapterView<?> arg0) { //
+         * TODO Auto-generated method stub
+         * 
+         * } });
+         */
         spinSearchBy = (Spinner) findViewById(R.id.spinSearchBy);
         String[] spinnerList = getResources().getStringArray(
                 R.array.search_searchby);
@@ -263,36 +271,34 @@ public class SearchActivity extends SenateActivity
                 R.layout.spinner22_item, spinnerList);
         adapterSpinner
                 .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinSearchBy.setAdapter(adapterSpinner);        
-        
-        spinSearchBy.setOnItemSelectedListener(
-                new OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> arg0, View arg1,
-                            int arg2, long arg3) {
-                        String selectedValue = (String) spinSearchBy.getItemAtPosition(arg2);
-                        //Log.i("Search By Change", "VALUE:"+selectedValue);
-                        if (selectedValue.equalsIgnoreCase("By Serial#")) {
-                            //Log.i("Search By Change", "Changed to Serial");
-                            barcode.setVisibility(View.GONE);
-                            acNuserial.setVisibility(View.VISIBLE);
-                        }
-                        else {
-                            //Log.i("Search By Change", "Changed to Senate Tag#");
-                            acNuserial.setVisibility(View.GONE);
-                            barcode.setVisibility(View.VISIBLE);
-                        }
-                    }
+        spinSearchBy.setAdapter(adapterSpinner);
 
-                    @Override
-                    public void onNothingSelected(AdapterView<?> arg0) {
-                        // TODO Auto-generated method stub
-                        
-                    }
-                });
+        spinSearchBy.setOnItemSelectedListener(new OnItemSelectedListener()
+        {
+            @Override
+            public void onItemSelected(AdapterView<?> arg0, View arg1,
+                    int arg2, long arg3) {
+                String selectedValue = (String) spinSearchBy
+                        .getItemAtPosition(arg2);
+                // Log.i("Search By Change", "VALUE:"+selectedValue);
+                if (selectedValue.equalsIgnoreCase("By Serial#")) {
+                    // Log.i("Search By Change", "Changed to Serial");
+                    barcode.setVisibility(View.GONE);
+                    acNuserial.setVisibility(View.VISIBLE);
+                } else {
+                    // Log.i("Search By Change", "Changed to Senate Tag#");
+                    acNuserial.setVisibility(View.GONE);
+                    barcode.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> arg0) {
+                // TODO Auto-generated method stub
+
+            }
+        });
     }
-    
-    
 
     @Override
     protected void onResume() {
@@ -324,19 +330,19 @@ public class SearchActivity extends SenateActivity
             }
         }
     };
-    
-    
+
     public int getSerialList(String nuserialPartial) {
         status = "yes";
 
         // Get the URL from the properties
         URL = LoginActivity.properties.get("WEBAPP_BASE_URL").toString();
-        //System.out.println(URL + "/SerialList?nuserial="+nuserialPartial+"&maxResults=50");
-        AsyncTask<String, String, String> resr1 = new RequestTask()
-                .execute(URL + "/SerialList?nuserial="+nuserialPartial+"&maxResults=50");
-        
+        // System.out.println(URL +
+        // "/SerialList?nuserial="+nuserialPartial+"&maxResults=50");
+        AsyncTask<String, String, String> resr1 = new RequestTask().execute(URL
+                + "/SerialList?nuserial=" + nuserialPartial + "&maxResults=50");
+
         serialList = new ArrayList<InvSerialNumber>();
-        int statusNum  = 0;
+        int statusNum = 0;
         int recordCount = 0;
 
         try {
@@ -354,10 +360,10 @@ public class SearchActivity extends SenateActivity
                 }
             } catch (NullPointerException e) {
                 noServerResponse();
-                return  -2;
+                return -2;
             }
             String jsonString = resr1.get().trim().toString();
-            //System.out.println("Serial# jsonString:"+jsonString);
+            // System.out.println("Serial# jsonString:"+jsonString);
 
             JSONArray jsonArray = new JSONArray(jsonString);
             // this will populate the lists from the JSON array coming from
@@ -367,43 +373,40 @@ public class SearchActivity extends SenateActivity
                 JSONObject jo = new JSONObject();
                 jo = jsonArray.getJSONObject(i);
                 statusNum = jo.getInt("statusNum");
-                //System.out.println("statusNum:"+statusNum);
-                if (statusNum!=0) {
-                    //System.out.println("Don't look at the rest");
+                // System.out.println("statusNum:"+statusNum);
+                if (statusNum != 0) {
+                    // System.out.println("Don't look at the rest");
                     serialListNeeded = true;
                     break;
                 }
                 serialListNeeded = false;
                 InvSerialNumber invSerialNumber = new InvSerialNumber();
-                invSerialNumber.setNuxrefsn( jo.getString("nuxrefsn"));
+                invSerialNumber.setNuxrefsn(jo.getString("nuxrefsn"));
                 invSerialNumber.setNuserial(jo.getString("nuserial"));
                 invSerialNumber.setNusenate(jo.getString("nusenate"));
                 invSerialNumber.setCdcommodity(jo.getString("cdcommodity"));
                 invSerialNumber.setDecommodityf(jo.getString("decommodityf"));
-                
-          /*      try {
-                    StringBuffer values = new StringBuffer();
-                    values.append(invSerialNumber.getNuserial());
-                    values.append("|");
-                    values.append(invSerialNumber.getNusenate());
-                    values.append("|");
-                    values.append(invSerialNumber.getDecommodityf());
-                    values.append("|now|");
-                    values.append(LoginActivity.nauser);
-                    values.append("|now|");
-                    values.append(LoginActivity.nauser);
-                    System.out.println ("INSERTING SERIAL#:"+invSerialNumber.getNuserial());
-                    long rowsInserted = MenuActivity.db
-                            .insert("ad12serial",
-                                    "nuserial|nusenate|decommodityf|dttxnorigin|natxnorguser|dttxnupdate|natxnupduser",
-                                    values.toString());
 
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }               */     
-                
-                if (invSerialNumber.getNuserial()==null) {
+                /*
+                 * try { StringBuffer values = new StringBuffer();
+                 * values.append(invSerialNumber.getNuserial());
+                 * values.append("|");
+                 * values.append(invSerialNumber.getNusenate());
+                 * values.append("|");
+                 * values.append(invSerialNumber.getDecommodityf());
+                 * values.append("|now|"); values.append(LoginActivity.nauser);
+                 * values.append("|now|"); values.append(LoginActivity.nauser);
+                 * System.out.println
+                 * ("INSERTING SERIAL#:"+invSerialNumber.getNuserial()); long
+                 * rowsInserted = MenuActivity.db .insert("ad12serial",
+                 * "nuserial|nusenate|decommodityf|dttxnorigin|natxnorguser|dttxnupdate|natxnupduser"
+                 * , values.toString());
+                 * 
+                 * } catch (Exception e) { // TODO Auto-generated catch block
+                 * e.printStackTrace(); }
+                 */
+
+                if (invSerialNumber.getNuserial() == null) {
                     Log.i("ADD SERIAL", "ADDING NUSERIAL IS NULL");
                 }
                 serialList.add(invSerialNumber);
@@ -421,178 +424,143 @@ public class SearchActivity extends SenateActivity
             e.printStackTrace();
         }
         status = "yes1";
-        serialListAdapter = new InvSerialAdapter(getApplicationContext(), acNuserial, R.layout.row_serialitem, serialList);
-                
-         Toasty toasty = new Toasty(context);
-         
-         if (statusNum>0) {
-             //toasty.showMessage("Too many results ("+statusNum+") found, please keep typing.");
-         }
-         else if (statusNum<0) {
-             toasty.showMessage("Server returned an error number of "+statusNum+" when trying to filter Serial#s. Please contact STSBAC. .");
-         }
-        
-                /*new ArrayAdapter(this,R.layout.row_serialitem, serialList) {
-            
-            class ViewHolder
-            {
-                RelativeLayout rlSerialRow;
-                // TextView commodityListNucnt;
-                TextView tvNuserial;
-                TextView tvNusenate;
-                TextView tvDecommodityf;
-            }         
-            
-            @Override
-            public View getView(final int position, View convertView, final ViewGroup parent) {
-                ViewHolder holder = null;
-                InvSerialNumber rowItem = null;
-                if (convertView == null) {
-                    final LayoutInflater mInflater = (LayoutInflater) context
-                            .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        serialListAdapter = new InvSerialAdapter(getApplicationContext(),
+                acNuserial, R.layout.row_serialitem, serialList);
 
-                    convertView = mInflater.inflate(R.layout.row_serialitem, null);
-                    holder = new ViewHolder();
-                    holder.rlSerialRow = (RelativeLayout) convertView
-                            .findViewById(R.id.rlSerialRow);
-                    //
-                    // holder.commodityListNucnt = (TextView) convertView
-                    // .findViewById(R.id.commodityListNucnt);
-                    //
-                    holder.tvNuserial = (TextView) convertView
-                            .findViewById(R.id.tvNuserial);
-                    holder.tvNusenate = (TextView) convertView
-                            .findViewById(R.id.tvNusenate);
-                    holder.tvDecommodityf = (TextView) convertView
-                            .findViewById(R.id.tvDecommodityf);
-                    convertView.setTag(holder);
-                } else {
-                    holder = (ViewHolder) convertView.getTag();
-                }
-                
-                
-                if (position > -1 && serialList != null && position < serialList.size()) {
-                    rowItem = serialList.get(position);
-                    // holder.commodityListNucnt.setText(rowItem.getNucnt());
-                    holder.tvNusenate.setText(Html.fromHtml("<b>T: "+rowItem.getNusenate()+"</b>"));
-                    holder.tvDecommodityf.setText(Html.fromHtml(rowItem.getDecommodityf()));
-                    holder.tvNuserial.setText(Html.fromHtml("<b>S: "+rowItem.getNuserial()+"</b>"));
-                    holder.tvNusenate.setTextColor(context.getResources()
-                            .getColor(R.color.black));
-                    holder.tvDecommodityf.setTextColor(context.getResources()
-                            .getColor(R.color.black));
-                    holder.tvNuserial.setTextColor(context.getResources()
-                            .getColor(R.color.black));
-                    
-                } else {
-                    // holder.commodityListNucnt.setText("");
-                    holder.tvNuserial.setText("");
-                    holder.tvNusenate.setText("");
-                    holder.tvDecommodityf.setText("");                }
+        Toasty toasty = new Toasty(context);
 
-                if (position % 2 > 0) {
-                    holder.rlSerialRow.setBackgroundColor(context.getResources()
-                            .getColor(R.color.white));
-                } else {
-                    holder.rlSerialRow.setBackgroundColor(context.getResources()
-                            .getColor(R.color.blueveryverylight));
-                }
-
-                return convertView;
-            }
-            
-            @Override
-            public Filter getFilter() {
-                return  nameFilter;
-            }
-
-            Filter nameFilter = new Filter() {
-                
-                public String convertResultToString(Object resultValue) {
-                    String str = ((InvSerialNumber)(resultValue)).getNusenate(); 
-                    return str;
-                }
-                
-                @Override
-                protected FilterResults performFiltering(CharSequence constraint) {
-                    Log.i("performFiltering", "constraint:"+constraint+" serialListOrg SIZE:"+serialListOrg.size());
-                    
-                    if(constraint != null) {
-                        if (suggestions==null) {
-                            suggestions = new ArrayList<InvSerialNumber>();
-                        }
-                        suggestions.clear();
-                        for (InvSerialNumber invSerialNumber : serialListOrg) {
-                            Log.i("performFiltering", "invSerialNumber:"+invSerialNumber.toString());
-                            if(invSerialNumber.getNuserial().startsWith(constraint.toString().toLowerCase())){
-                                //Log.i("performFiltering", "     ADDED invSerialNumber:"+invSerialNumber.toString());
-                                suggestions.add(invSerialNumber);
-                            }
-                        }
-                        FilterResults filterResults = new FilterResults();
-                        filterResults.values = suggestions;
-                        filterResults.count = suggestions.size();
-                        Log.i("performFiltering", "new filter count:"+filterResults.count);
-                        return filterResults;
-                    } else {
-                            // No filter implemented we return all the list
-                            FilterResults filterResults = new FilterResults();
-                            filterResults.values = serialListOrg;
-                            filterResults.count = serialListOrg.size();
-                            return filterResults;                            
-    
-                    }
-                }
-                @Override
-                protected void publishResults(CharSequence constraint, FilterResults results) {
-                    Log.i("publishResults", "start");
-                    ArrayList<InvSerialNumber> filteredList = (ArrayList<InvSerialNumber>) results.values;
-                    Log.i("publishResults", "got result values");
-                    if(results != null && results.count > 0) {
-                        Log.i("publishResults", "clearing");
-                        clear();
-                        Log.i("publishResults", "loop filtered list");
-                        for (InvSerialNumber invSN : filteredList) {
-                            Log.i("publishResults", "adding:"+invSN.toString());
-                            add(invSN);
-                        }
-                        Log.i("publishResults", "notifyDataSetChanged");
-                        notifyDataSetChanged();
-                        Log.i("publishResults", "done");
-                    }
-                }
-
-            };   
-           
-          
-        };*/
-        acNuserial.setAdapter(serialListAdapter);
-        if (statusNum>0) {
-            recordCount = statusNum;
+        if (statusNum > 0) {
+            // toasty.showMessage("Too many results ("+statusNum+") found, please keep typing.");
+        } else if (statusNum < 0) {
+            toasty.showMessage("Server returned an error number of "
+                    + statusNum
+                    + " when trying to filter Serial#s. Please contact STSBAC. .");
         }
-        else {
-            if (serialList==null) {
-               recordCount = 0;
-            }
-            else {
+
+        /*
+         * new ArrayAdapter(this,R.layout.row_serialitem, serialList) {
+         * 
+         * class ViewHolder { RelativeLayout rlSerialRow; // TextView
+         * commodityListNucnt; TextView tvNuserial; TextView tvNusenate;
+         * TextView tvDecommodityf; }
+         * 
+         * @Override public View getView(final int position, View convertView,
+         * final ViewGroup parent) { ViewHolder holder = null; InvSerialNumber
+         * rowItem = null; if (convertView == null) { final LayoutInflater
+         * mInflater = (LayoutInflater) context
+         * .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+         * 
+         * convertView = mInflater.inflate(R.layout.row_serialitem, null);
+         * holder = new ViewHolder(); holder.rlSerialRow = (RelativeLayout)
+         * convertView .findViewById(R.id.rlSerialRow); // //
+         * holder.commodityListNucnt = (TextView) convertView //
+         * .findViewById(R.id.commodityListNucnt); // holder.tvNuserial =
+         * (TextView) convertView .findViewById(R.id.tvNuserial);
+         * holder.tvNusenate = (TextView) convertView
+         * .findViewById(R.id.tvNusenate); holder.tvDecommodityf = (TextView)
+         * convertView .findViewById(R.id.tvDecommodityf);
+         * convertView.setTag(holder); } else { holder = (ViewHolder)
+         * convertView.getTag(); }
+         * 
+         * 
+         * if (position > -1 && serialList != null && position <
+         * serialList.size()) { rowItem = serialList.get(position); //
+         * holder.commodityListNucnt.setText(rowItem.getNucnt());
+         * holder.tvNusenate
+         * .setText(Html.fromHtml("<b>T: "+rowItem.getNusenate()+"</b>"));
+         * holder
+         * .tvDecommodityf.setText(Html.fromHtml(rowItem.getDecommodityf()));
+         * holder
+         * .tvNuserial.setText(Html.fromHtml("<b>S: "+rowItem.getNuserial()
+         * +"</b>")); holder.tvNusenate.setTextColor(context.getResources()
+         * .getColor(R.color.black));
+         * holder.tvDecommodityf.setTextColor(context.getResources()
+         * .getColor(R.color.black));
+         * holder.tvNuserial.setTextColor(context.getResources()
+         * .getColor(R.color.black));
+         * 
+         * } else { // holder.commodityListNucnt.setText("");
+         * holder.tvNuserial.setText(""); holder.tvNusenate.setText("");
+         * holder.tvDecommodityf.setText(""); }
+         * 
+         * if (position % 2 > 0) {
+         * holder.rlSerialRow.setBackgroundColor(context.getResources()
+         * .getColor(R.color.white)); } else {
+         * holder.rlSerialRow.setBackgroundColor(context.getResources()
+         * .getColor(R.color.blueveryverylight)); }
+         * 
+         * return convertView; }
+         * 
+         * @Override public Filter getFilter() { return nameFilter; }
+         * 
+         * Filter nameFilter = new Filter() {
+         * 
+         * public String convertResultToString(Object resultValue) { String str
+         * = ((InvSerialNumber)(resultValue)).getNusenate(); return str; }
+         * 
+         * @Override protected FilterResults performFiltering(CharSequence
+         * constraint) { Log.i("performFiltering",
+         * "constraint:"+constraint+" serialListOrg SIZE:"
+         * +serialListOrg.size());
+         * 
+         * if(constraint != null) { if (suggestions==null) { suggestions = new
+         * ArrayList<InvSerialNumber>(); } suggestions.clear(); for
+         * (InvSerialNumber invSerialNumber : serialListOrg) {
+         * Log.i("performFiltering",
+         * "invSerialNumber:"+invSerialNumber.toString());
+         * if(invSerialNumber.getNuserial
+         * ().startsWith(constraint.toString().toLowerCase())){
+         * //Log.i("performFiltering",
+         * "     ADDED invSerialNumber:"+invSerialNumber.toString());
+         * suggestions.add(invSerialNumber); } } FilterResults filterResults =
+         * new FilterResults(); filterResults.values = suggestions;
+         * filterResults.count = suggestions.size(); Log.i("performFiltering",
+         * "new filter count:"+filterResults.count); return filterResults; }
+         * else { // No filter implemented we return all the list FilterResults
+         * filterResults = new FilterResults(); filterResults.values =
+         * serialListOrg; filterResults.count = serialListOrg.size(); return
+         * filterResults;
+         * 
+         * } }
+         * 
+         * @Override protected void publishResults(CharSequence constraint,
+         * FilterResults results) { Log.i("publishResults", "start");
+         * ArrayList<InvSerialNumber> filteredList =
+         * (ArrayList<InvSerialNumber>) results.values; Log.i("publishResults",
+         * "got result values"); if(results != null && results.count > 0) {
+         * Log.i("publishResults", "clearing"); clear(); Log.i("publishResults",
+         * "loop filtered list"); for (InvSerialNumber invSN : filteredList) {
+         * Log.i("publishResults", "adding:"+invSN.toString()); add(invSN); }
+         * Log.i("publishResults", "notifyDataSetChanged");
+         * notifyDataSetChanged(); Log.i("publishResults", "done"); } }
+         * 
+         * };
+         * 
+         * 
+         * };
+         */
+        acNuserial.setAdapter(serialListAdapter);
+        if (statusNum > 0) {
+            recordCount = statusNum;
+        } else {
+            if (serialList == null) {
+                recordCount = 0;
+            } else {
                 recordCount = serialList.size();
             }
         }
         return recordCount;
 
     }
-    
-    public void toggleRowVisibility(TableRow row){
 
-        if(row.getVisibility() == View.VISIBLE)
-        {
+    public void toggleRowVisibility(TableRow row) {
+
+        if (row.getVisibility() == View.VISIBLE) {
             row.setVisibility(View.GONE);
+        } else {
+            row.setVisibility(View.VISIBLE);
         }
-        else
-        {
-            row.setVisibility(View.VISIBLE);    
-        }
-    }    
+    }
 
     public void noServerResponse() {
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
@@ -606,24 +574,26 @@ public class SearchActivity extends SenateActivity
                 .setMessage(
                         Html.fromHtml("!!ERROR: There was <font color='RED'><b>NO SERVER RESPONSE</b></font>. <br/> Please contact STS/BAC."))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
 
-                        CharSequence text = "No action taken due to NO SERVER RESPONSE";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "No action taken due to NO SERVER RESPONSE";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
@@ -631,28 +601,26 @@ public class SearchActivity extends SenateActivity
         // show it
         alertDialog.show();
     }
-    
+
     // initialize the cursor adapter
- /*   private void initCursorAdapter()
-       {
-        String[] searchBy = new String[1];
-        searchBy[0] = this.acNuserial.getText().toString()+"%";
-         
-           serialCursor =  MenuActivity.db.rawQuery("SELECT nuserial, nusenate, decommodityf FROM ad12serial WHERE nuserial like ?", searchBy);     
-//           startManagingCursor(mItemCursor);
-           
-           serialAdapter = new SimpleCursorAdapter(getApplicationContext(), android.R.layout.simple_list_item_1, serialCursor, searchBy, null);
-                   
-       }
-       
-       // initialize AutocompleteTextView
-    private void initItemFilter()
-       {
-          String[] searchBy = new String[1];
-          searchBy[0] = this.acNuserial.getText().toString()+"%";
-           this.acNuserial.setAdapter(serialAdapter);
-           acNuserial.setThreshold(1);
-       }     */
+    /*
+     * private void initCursorAdapter() { String[] searchBy = new String[1];
+     * searchBy[0] = this.acNuserial.getText().toString()+"%";
+     * 
+     * serialCursor = MenuActivity.db.rawQuery(
+     * "SELECT nuserial, nusenate, decommodityf FROM ad12serial WHERE nuserial like ?"
+     * , searchBy); // startManagingCursor(mItemCursor);
+     * 
+     * serialAdapter = new SimpleCursorAdapter(getApplicationContext(),
+     * android.R.layout.simple_list_item_1, serialCursor, searchBy, null);
+     * 
+     * }
+     * 
+     * // initialize AutocompleteTextView private void initItemFilter() {
+     * String[] searchBy = new String[1]; searchBy[0] =
+     * this.acNuserial.getText().toString()+"%";
+     * this.acNuserial.setAdapter(serialAdapter); acNuserial.setThreshold(1); }
+     */
 
     public void getSearchDetails() {
         try {
@@ -674,7 +642,7 @@ public class SearchActivity extends SenateActivity
                 try {
                     res = null;
                     res = resr1.get().trim().toString();
-                    //Log.i("Search res ", "res:" + res);
+                    // Log.i("Search res ", "res:" + res);
                     if (res == null) {
                         noServerResponse();
                         return;
@@ -698,7 +666,8 @@ public class SearchActivity extends SenateActivity
                 // display error
                 status = "no";
             }
-            if (res.toUpperCase(Locale.ENGLISH).contains("DOES NOT EXIST IN SYSTEM")) {
+            if (res.toUpperCase(Locale.ENGLISH).contains(
+                    "DOES NOT EXIST IN SYSTEM")) {
                 tvBarcode.setText(barcode.getText().toString()
                         + " - !!ERROR: DOES NOT EXIST.");
                 int color = Integer.parseInt("bb0000", 16) + 0xFF000000;
@@ -715,34 +684,36 @@ public class SearchActivity extends SenateActivity
                 int color = Integer.parseInt("000000", 16) + 0xFF000000;
                 tvBarcode.setTextColor(color);
                 try {
+                    System.out.println("res:" + res);
                     JSONObject object = (JSONObject) new JSONTokener(res)
                             .nextValue();
+                    System.out.println("nusenateMsg");
                     StringBuilder nusenateMsg = new StringBuilder();
                     nusenateMsg.append(object.getString("nusenate"));
                     String cdstatus = object.getString("cdstatus");
-                    //Log.i("TEST", "CDSTATUS:(" + cdstatus + ")");
+                    // Log.i("TEST", "CDSTATUS:(" + cdstatus + ")");
                     if (cdstatus.equalsIgnoreCase("I")) {
                         nusenateMsg.append(" <font color='RED'>(INACTIVE) ");
                         nusenateMsg.append(object.getString("deadjust"));
-                        //Log.i("TEST", "INACTIVE CDSTATUS:(" + cdstatus + ")");
+                        // Log.i("TEST", "INACTIVE CDSTATUS:(" + cdstatus +
+                        // ")");
                     }
 
-                    //Log.i("TEST", "Senate Tag#:" + nusenateMsg);
+                    // Log.i("TEST", "Senate Tag#:" + nusenateMsg);
                     tvBarcode.setText(Html.fromHtml(nusenateMsg.toString()));
+                    System.out.println("tvNuserial");
                     try {
                         tvNuserial.setText(object.getString("nuserial"));
-                    }
-                    catch (JSONException e1) {
+                    } catch (JSONException e1) {
                         tvNuserial.setText("N/A");
                     }
 
-                    if (tvNuserial.getText().toString().trim().length()>0) {
+                    if (tvNuserial.getText().toString().trim().length() > 0) {
                         rwNuserial.setVisibility(View.VISIBLE);
-                    }
-                    else {
+                    } else {
                         rwNuserial.setVisibility(View.GONE);
                     }
-                    
+
                     tvDescription.setText(object.getString("decommodityf")
                             .replaceAll("&#34;", "\""));
                     tvCategory.setText(object.getString("cdcategory"));
@@ -753,8 +724,7 @@ public class SearchActivity extends SenateActivity
                             + object.getString("adstreet1to").replaceAll(
                                     "&#34;", "\""));
                     tvDateInvntry.setText(object.getString("dtlstinvntry"));
-                    tvCommodityCd.setText(object.getString("commodityCd"));
-
+                    tvCommodityCd.setText(object.getString("cdcommodity"));
                 } catch (JSONException e) {
                     // TODO Auto-generated catch block
                     tvDescription.setText("!!ERROR: " + e.getMessage());
@@ -771,11 +741,12 @@ public class SearchActivity extends SenateActivity
             // textView.setText("\n" + res);
             barcode.setText("");
             final Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-              @Override
-              public void run() {
-                  acNuserial.setText("");
-              }
+            handler.postDelayed(new Runnable()
+            {
+                @Override
+                public void run() {
+                    acNuserial.setText("");
+                }
             }, 100);
         } catch (Exception e) {
             tvDescription.setText("!!ERROR: " + e.getMessage());
@@ -844,82 +815,60 @@ public class SearchActivity extends SenateActivity
         }
     }
 
-/*    class SerialCursorAdapter extends SimpleCursorAdapter {
+    /*
+     * class SerialCursorAdapter extends SimpleCursorAdapter {
+     * 
+     * private Context mContext; private Context appContext; private int layout;
+     * private Cursor cr; private final LayoutInflater inflater;
+     * 
+     * class ViewHolder { RelativeLayout rlSerialRow; // TextView
+     * commodityListNucnt; TextView tvNuserial; TextView tvNusenate; TextView
+     * tvDecommodityf; }
+     * 
+     * @SuppressWarnings("deprecation") public SerialCursorAdapter(Context
+     * context,int layout, Cursor c,String[] from,int[] to) {
+     * super(context,layout,c,from,to); this.layout=layout; this.mContext =
+     * context; this.inflater=LayoutInflater.from(context); this.cr=c; }
+     * 
+     * @Override public View newView (Context context, Cursor cursor, ViewGroup
+     * parent) { return inflater.inflate(layout, null); }
+     * 
+     * @Override public void bindView(View view, Context context, Cursor cursor)
+     * { super.bindView(view, context, cursor); ViewHolder holder = null;
+     * InvSerialNumber rowItem = null; if (view == null) { final LayoutInflater
+     * mInflater = (LayoutInflater) context
+     * .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+     * 
+     * view = mInflater.inflate(R.layout.row_serialitem, null); holder = new
+     * ViewHolder(); holder.rlSerialRow = (RelativeLayout) view
+     * .findViewById(R.id.rlSerialRow); // // holder.commodityListNucnt =
+     * (TextView) convertView // .findViewById(R.id.commodityListNucnt); //
+     * holder.tvNuserial = (TextView) view .findViewById(R.id.tvNuserial);
+     * holder.tvNusenate = (TextView) view .findViewById(R.id.tvNusenate);
+     * holder.tvDecommodityf = (TextView) view
+     * .findViewById(R.id.tvDecommodityf); view.setTag(holder); } else { holder
+     * = (ViewHolder) view.getTag(); }
+     * 
+     * 
+     * //if (position > -1 && serialList != null && position <
+     * serialList.size()) { //
+     * holder.commodityListNucnt.setText(rowItem.getNucnt());
+     * holder.tvNuserial.setText
+     * (Html.fromHtml("<b>S: "+cursor.getString(1)+"</b>"));
+     * holder.tvNusenate.setText
+     * (Html.fromHtml("<b>T: "+cursor.getString(2)+"</b>"));
+     * holder.tvDecommodityf.setText(Html.fromHtml(cursor.getString(3)));
+     * holder.tvNusenate.setTextColor(context.getResources()
+     * .getColor(R.color.black));
+     * holder.tvDecommodityf.setTextColor(context.getResources()
+     * .getColor(R.color.black));
+     * holder.tvNuserial.setTextColor(context.getResources()
+     * .getColor(R.color.black));
+     * 
+     * 
+     * }
+     * 
+     * }
+     */
 
-        private Context mContext;
-        private Context appContext;
-        private int layout;
-        private Cursor cr;
-        private final LayoutInflater inflater;
-        
-        class ViewHolder
-        {
-            RelativeLayout rlSerialRow;
-            // TextView commodityListNucnt;
-            TextView tvNuserial;
-            TextView tvNusenate;
-            TextView tvDecommodityf;
-        }          
-
-        @SuppressWarnings("deprecation")
-        public SerialCursorAdapter(Context context,int layout, Cursor c,String[] from,int[] to) {
-            super(context,layout,c,from,to);
-            this.layout=layout;
-            this.mContext = context;
-            this.inflater=LayoutInflater.from(context);
-            this.cr=c;
-        }
-
-        @Override
-        public View newView (Context context, Cursor cursor, ViewGroup parent) {
-                return inflater.inflate(layout, null);
-        }
-
-        @Override
-        public void bindView(View view, Context context, Cursor cursor) {
-            super.bindView(view, context, cursor);
-                ViewHolder holder = null;
-                InvSerialNumber rowItem = null;
-                if (view == null) {
-                    final LayoutInflater mInflater = (LayoutInflater) context
-                            .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
-                    view = mInflater.inflate(R.layout.row_serialitem, null);
-                    holder = new ViewHolder();
-                    holder.rlSerialRow = (RelativeLayout) view
-                            .findViewById(R.id.rlSerialRow);
-                    //
-                    // holder.commodityListNucnt = (TextView) convertView
-                    // .findViewById(R.id.commodityListNucnt);
-                    //
-                    holder.tvNuserial = (TextView) view
-                            .findViewById(R.id.tvNuserial);
-                    holder.tvNusenate = (TextView) view
-                            .findViewById(R.id.tvNusenate);
-                    holder.tvDecommodityf = (TextView) view
-                            .findViewById(R.id.tvDecommodityf);
-                    view.setTag(holder);
-                } else {
-                    holder = (ViewHolder) view.getTag();
-                }
-                
-                
-                //if (position > -1 && serialList != null && position < serialList.size()) {
-                    // holder.commodityListNucnt.setText(rowItem.getNucnt());
-                    holder.tvNuserial.setText(Html.fromHtml("<b>S: "+cursor.getString(1)+"</b>"));
-                    holder.tvNusenate.setText(Html.fromHtml("<b>T: "+cursor.getString(2)+"</b>"));
-                    holder.tvDecommodityf.setText(Html.fromHtml(cursor.getString(3)));
-                    holder.tvNusenate.setTextColor(context.getResources()
-                            .getColor(R.color.black));
-                    holder.tvDecommodityf.setTextColor(context.getResources()
-                            .getColor(R.color.black));
-                    holder.tvNuserial.setTextColor(context.getResources()
-                            .getColor(R.color.black));
-                    
-    
-        }
-
-} */  
-        
-    
 }

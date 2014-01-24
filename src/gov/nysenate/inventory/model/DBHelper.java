@@ -25,14 +25,12 @@ public class DBHelper extends SQLiteOpenHelper
             + " dttxnorigin TEXT NOT NULL, natxnorguser TEXT NOT NULL, "
             + " dttxnupdate TEXT NOT NULL, natxnupduser TEXT NOT NULL" + " );";
 
-
     private static final String TABLE_SERIALINV_CREATE = "CREATE TABLE ad12serial "
             + "( nuxrserial INTEGER PRIMARY KEY AUTOINCREMENT,  nusenate TEXT NOT NULL, "
-            + " nuserial TEXT NOT NULL,  decommodityf TEXT NOT NULL," +
-            " dttxnorigin TEXT NOT NULL, natxnorguser TEXT NOT NULL, "
+            + " nuserial TEXT NOT NULL,  decommodityf TEXT NOT NULL,"
+            + " dttxnorigin TEXT NOT NULL, natxnorguser TEXT NOT NULL, "
             + " dttxnupdate TEXT NOT NULL, natxnupduser TEXT NOT NULL" + " );";
 
-    
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -48,9 +46,9 @@ public class DBHelper extends SQLiteOpenHelper
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.w(DBHelper.class.getName(),
-                "Upgrading database from version " + oldVersion + " to "
-                        + newVersion + ", which will destroy all old data");
+        Log.w(DBHelper.class.getName(), "Upgrading database from version "
+                + oldVersion + " to " + newVersion
+                + ", which will destroy all old data");
         db.execSQL("DROP TABLE IF EXISTS ad12verinv");
         onCreate(db);
     }

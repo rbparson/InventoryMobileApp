@@ -8,9 +8,12 @@ import gov.nysenate.inventory.android.R.id;
 import gov.nysenate.inventory.android.R.layout;
 import gov.nysenate.inventory.android.R.menu;
 import gov.nysenate.inventory.model.Commodity;
+import gov.nysenate.inventory.model.Location;
+import gov.nysenate.inventory.util.TransactionParser;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -65,6 +68,7 @@ public class Delivery1 extends SenateActivity
     String timeoutFrom = "delivery1";
     public final int LOCCODELIST_TIMEOUT = 101, LOCATIONDETAILS_TIMEOUT = 102;
     private int lastSize = 0;
+    private List<Location> locations;
 
     boolean locationBeingTyped = false;
 
@@ -186,7 +190,7 @@ public class Delivery1 extends SenateActivity
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count,
                 int after) {
-             lastSize = autoCompleteTextView1.getText().toString().length();
+            lastSize = autoCompleteTextView1.getText().toString().length();
         }
 
         @Override
@@ -194,12 +198,12 @@ public class Delivery1 extends SenateActivity
             locationBeingTyped = true;
             int currentSize = autoCompleteTextView1.getText().toString()
                     .length();
-            if (currentSize == 0||currentSize<lastSize) {
+            if (currentSize == 0 || currentSize < lastSize) {
                 tvOfficeD.setText("N/A");
                 tvDescriptD.setText("N/A");
-            } /*else if (textLength >= 3) {
-                getLocationDetails();
-            }*/
+            } /*
+               * else if (textLength >= 3) { getLocationDetails(); }
+               */
         }
     };
 
@@ -215,24 +219,26 @@ public class Delivery1 extends SenateActivity
                 .setMessage(
                         Html.fromHtml("!!ERROR: There was <font color='RED'>NO SERVER RESPONSE</font>. <br/> Please contact STS/BAC."))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
 
-                        CharSequence text = "No action taken due to NO SERVER RESPONSE";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "No action taken due to NO SERVER RESPONSE";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
@@ -420,17 +426,11 @@ public class Delivery1 extends SenateActivity
                     noServerResponse();
                     return;
                 }
-                // code for JSON
 
-                String jsonString = resr1.get().trim().toString();
-                JSONArray jsonArray = new JSONArray(jsonString);
-
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    locCodeList.add(jsonArray.getString(i).toString());
+                locations = TransactionParser.parseMultipleLocations(res);
+                for (Location loc: locations) {
+                    locCodeList.add(loc.getLocationSummaryString());
                 }
-
-                Collections.sort(locCodeList);
-
                 ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                         android.R.layout.simple_dropdown_item_1line,
                         locCodeList);
@@ -443,9 +443,6 @@ public class Delivery1 extends SenateActivity
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (ExecutionException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (JSONException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }

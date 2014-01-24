@@ -39,24 +39,32 @@ public class KeywordListViewAdapter extends ArrayAdapter<String> implements
     NewInvDialog newInvDialog = null;
     int rowSelected = -1;
     boolean replaceSpace = false;
-    InputFilter keywordFilter = new InputFilter() {   
-        @Override  
-        public CharSequence filter(CharSequence arg0, int arg1, int arg2, Spanned arg3, int arg4, int arg5)  
-            {  
-                 for (int k = arg1; k < arg2; k++) {
-                     if (k>0  && arg0.charAt(k) == ',' && etKeywordCurrent.getText().toString().endsWith(",") ) {
-                         return "";   
-                     }
-                    /* else if (Character.isSpaceChar(arg0.charAt(k))) {
-                         return ",";   
-                     }*/
-                     else if (!Character.isLetterOrDigit(arg0.charAt(k)) && arg0.charAt(k) != '-' && arg0.charAt(k) != '/' && arg0.charAt(k) != '\\'/* && arg0.charAt(k) != '.' && arg0.charAt(k) != ','*/) {   
-                         return "";   
-                     }   
-                 }   
-             return null;   
-            }   
-    };       
+    InputFilter keywordFilter = new InputFilter()
+    {
+        @Override
+        public CharSequence filter(CharSequence arg0, int arg1, int arg2,
+                Spanned arg3, int arg4, int arg5) {
+            for (int k = arg1; k < arg2; k++) {
+                if (k > 0 && arg0.charAt(k) == ','
+                        && etKeywordCurrent.getText().toString().endsWith(",")) {
+                    return "";
+                }
+                /*
+                 * else if (Character.isSpaceChar(arg0.charAt(k))) { return ",";
+                 * }
+                 */
+                else if (!Character.isLetterOrDigit(arg0.charAt(k))
+                        && arg0.charAt(k) != '-' && arg0.charAt(k) != '/'
+                        && arg0.charAt(k) != '\\'/*
+                                                  * && arg0.charAt(k) != '.' &&
+                                                  * arg0.charAt(k) != ','
+                                                  */) {
+                    return "";
+                }
+            }
+            return null;
+        }
+    };
 
     public KeywordListViewAdapter(Context context, NewInvDialog newInvDialog,
             int resourceId, List<String> items) {
@@ -80,8 +88,6 @@ public class KeywordListViewAdapter extends ArrayAdapter<String> implements
         Button btnDeleteKeyword;
     }
 
-  
-    
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder = null;
@@ -155,15 +161,15 @@ public class KeywordListViewAdapter extends ArrayAdapter<String> implements
                 items.set(currentPosition, currentEtKeyword.getText()
                         .toString());
                 rowSelected = currentPosition;
-               /* String result = s.toString().replaceAll(" ", ",");
-                if (result.indexOf(",,")>-1) {
-                    result = result.replaceAll(",,",",");
-                }
-                if (!s.toString().equals(result)) {
-                    currentEtKeyword.setText(result);
-                    currentEtKeyword.setSelection(result.length());
-                    // alert the user
-               }*/
+                /*
+                 * String result = s.toString().replaceAll(" ", ","); if
+                 * (result.indexOf(",,")>-1) { result =
+                 * result.replaceAll(",,",","); } if
+                 * (!s.toString().equals(result)) {
+                 * currentEtKeyword.setText(result);
+                 * currentEtKeyword.setSelection(result.length()); // alert the
+                 * user }
+                 */
                 // notifyDataSetChanged();
             }
         };
@@ -176,7 +182,7 @@ public class KeywordListViewAdapter extends ArrayAdapter<String> implements
             holder.btnDeleteKeyword.setOnClickListener(l);
         }
 
-        holder.etKeyword.setFilters(new InputFilter[]{ keywordFilter});
+        holder.etKeyword.setFilters(new InputFilter[] { keywordFilter });
         etKeywordCurrent = holder.etKeyword;
 
         if (etKeywordFields.size() - 1 < position) {
@@ -184,7 +190,6 @@ public class KeywordListViewAdapter extends ArrayAdapter<String> implements
         } else {
             etKeywordFields.set(position, holder.etKeyword);
         }
-      
 
         return convertView;
     }
@@ -275,7 +280,7 @@ public class KeywordListViewAdapter extends ArrayAdapter<String> implements
             return blankRow;
         }
     }
-   
+
     public ArrayList<String> arrayListFromString(String values) {
         String[] valuesList = values.split(",");
         ArrayList<String> items = new ArrayList<String>();
@@ -286,24 +291,23 @@ public class KeywordListViewAdapter extends ArrayAdapter<String> implements
             }
         }
         return items;
-    }    
+    }
 
     public String stringFromArrayList(ArrayList<String> values) {
         StringBuffer sb = new StringBuffer();
         ArrayList<String> items = new ArrayList<String>();
         for (int x = 0; x < values.size(); x++) {
             String currentValue = values.get(x).trim();
-            if (currentValue!=null && currentValue.length()>0) {
-                if (x>0) {
+            if (currentValue != null && currentValue.length() > 0) {
+                if (x > 0) {
                     sb.append(",");
                 }
                 sb.append(currentValue);
             }
         }
         return sb.toString();
-    }    
-    
-    
+    }
+
     @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();

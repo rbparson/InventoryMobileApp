@@ -31,7 +31,8 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-public class RemovePickupItems extends SenateActivity {
+public class RemovePickupItems extends SenateActivity
+{
 
     Transaction pickup;
     ListView itemList;
@@ -52,18 +53,25 @@ public class RemovePickupItems extends SenateActivity {
         itemList = (ListView) findViewById(R.id.remove_list);
         progressBar = (ProgressBar) findViewById(R.id.progress_bar);
 
-        pickup = TransactionParser.parseTransaction(getIntent().getStringExtra("pickup"));
+        pickup = TransactionParser.parseTransaction(getIntent().getStringExtra(
+                "pickup"));
 
         String date = getIntent().getStringExtra("date");
 
-        oldPickupLocation.setText(Html.fromHtml(pickup.getOrigin().getLocationSummaryStringRemoteAppended()));
-        oldDeliveryLocation.setText(Html.fromHtml(pickup.getDestination().getLocationSummaryStringRemoteAppended()));
+        if (pickup.isRemote()) {
+            oldPickupLocation.setText(Html.fromHtml(pickup.getOrigin().getLocationSummaryStringRemoteAppended()));
+            oldDeliveryLocation.setText(Html.fromHtml(pickup.getDestination().getLocationSummaryStringRemoteAppended()));
+        } else {
+            oldPickupLocation.setText(pickup.getOrigin().getLocationSummaryString());
+            oldDeliveryLocation.setText(pickup.getDestination().getLocationSummaryString());
+        }
         oldPickupBy.setText(pickup.getNapickupby());
         oldCount.setText(Integer.toString(pickup.getPickupItems().size()));
         SimpleDateFormat sdf = ((InvApplication)getApplicationContext()).getSdf();
         oldDate.setText(sdf.format(pickup.getPickupDate()));
 
-        adapter = new InvSelListViewAdapter(this, R.layout.invlist_sel_item, pickup.getPickupItems());
+        adapter = new InvSelListViewAdapter(this, R.layout.invlist_sel_item,
+                pickup.getPickupItems());
         adapter.setAllSelected(false);
         adapter.setNotifyOnChange(true);
         itemList.setAdapter(adapter);
@@ -84,75 +92,98 @@ public class RemovePickupItems extends SenateActivity {
         if (adapter.getSelectedItems(true).size() < 1) {
             AlertDialog.Builder confirmDialog = new AlertDialog.Builder(this);
             confirmDialog.setCancelable(false);
-            confirmDialog.setTitle(Html.fromHtml("<font color='#000055'>Remove Delivery Items</font>"));
-            confirmDialog.setMessage(Html.fromHtml("You have not selected any items to be removed"));
-            confirmDialog.setNeutralButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener() {
+            confirmDialog
+                    .setTitle(Html
+                            .fromHtml("<font color='#000055'>Remove Delivery Items</font>"));
+            confirmDialog.setMessage(Html
+                    .fromHtml("You have not selected any items to be removed"));
+            confirmDialog.setNeutralButton(Html.fromHtml("<b>Yes</b>"),
+                    new DialogInterface.OnClickListener()
+                    {
 
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            });
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
             confirmDialog.show();
-            
+
         } else if (allItemsSelected()) {
             AlertDialog.Builder confirmDialog = new AlertDialog.Builder(this);
             confirmDialog.setCancelable(false);
-            confirmDialog.setTitle(Html.fromHtml("<font color='#000055'>Remove Delivery Items</font>"));
-            confirmDialog.setMessage(Html.fromHtml("You have selected <b>All</b> items from this delivery."
-                    + " <b>Continuing will cancel the entire delivery.</b><br><br>"
-                    + "Are you sure you want to continue?"));
-            confirmDialog.setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener() {
+            confirmDialog
+                    .setTitle(Html
+                            .fromHtml("<font color='#000055'>Remove Delivery Items</font>"));
+            confirmDialog
+                    .setMessage(Html
+                            .fromHtml("You have selected <b>All</b> items from this delivery."
+                                    + " <b>Continuing will cancel the entire delivery.</b><br><br>"
+                                    + "Are you sure you want to continue?"));
+            confirmDialog.setNegativeButton(Html.fromHtml("<b>No</b>"),
+                    new DialogInterface.OnClickListener()
+                    {
 
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    return;
-                }
-            });
-            confirmDialog.setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            return;
+                        }
+                    });
+            confirmDialog.setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                    new DialogInterface.OnClickListener()
+                    {
 
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                    new CancelPickupTask().execute();
-                }
-            });
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            new CancelPickupTask().execute();
+                        }
+                    });
             confirmDialog.show();
 
         } else {
             AlertDialog.Builder confirmDialog = new AlertDialog.Builder(this);
             confirmDialog.setCancelable(false);
-            confirmDialog.setTitle(Html.fromHtml("<font color='#000055'>Remove Delivery Items</font>"));
-            confirmDialog.setMessage(Html.fromHtml("You are about to remove <b>" + adapter.getSelectedItems(true).size()
-                    + "</b> items from this delivery.<br><br>"
-                    + "Are you sure you want to continue?"));
-            confirmDialog.setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener() {
+            confirmDialog
+                    .setTitle(Html
+                            .fromHtml("<font color='#000055'>Remove Delivery Items</font>"));
+            confirmDialog.setMessage(Html
+                    .fromHtml("You are about to remove <b>"
+                            + adapter.getSelectedItems(true).size()
+                            + "</b> items from this delivery.<br><br>"
+                            + "Are you sure you want to continue?"));
+            confirmDialog.setNegativeButton(Html.fromHtml("<b>No</b>"),
+                    new DialogInterface.OnClickListener()
+                    {
 
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    return;
-                }
-            });
-            confirmDialog.setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            return;
+                        }
+                    });
+            confirmDialog.setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                    new DialogInterface.OnClickListener()
+                    {
 
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                    new RemoveItemsTask().execute();
-                }
-            });
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            new RemoveItemsTask().execute();
+                        }
+                    });
             confirmDialog.show();
         }
     }
 
     private boolean allItemsSelected() {
-        if (adapter.getSelectedItems(true).size() == adapter.getAllItems().size()) {
+        if (adapter.getSelectedItems(true).size() == adapter.getAllItems()
+                .size()) {
             return true;
         }
         return false;
     }
 
-    private class CancelPickupTask extends AsyncTask<Void, Void, Integer> {
+    private class CancelPickupTask extends AsyncTask<Void, Void, Integer>
+    {
 
         @Override
         protected void onPreExecute() {
@@ -189,7 +220,8 @@ public class RemovePickupItems extends SenateActivity {
         }
     }
 
-    private class RemoveItemsTask extends AsyncTask<Void, Void, Integer> {
+    private class RemoveItemsTask extends AsyncTask<Void, Void, Integer>
+    {
 
         @Override
         protected void onPreExecute() {
@@ -202,7 +234,8 @@ public class RemovePickupItems extends SenateActivity {
             HttpResponse response;
             String url = AppProperties.getBaseUrl(RemovePickupItems.this);
             url += "RemovePickupItems?nuxrpd=" + pickup.getNuxrpd();
-            url += Formatter.generateGetArray("items[]", adapter.getSelectedItems(true));
+            url += Formatter.generateGetArray("items[]",
+                    adapter.getSelectedItems(true));
             url += "&userFallback=" + LoginActivity.nauser;
             try {
                 response = httpClient.execute(new HttpGet(url));
@@ -218,7 +251,8 @@ public class RemovePickupItems extends SenateActivity {
         @Override
         protected void onPostExecute(Integer response) {
             progressBar.setVisibility(ProgressBar.INVISIBLE);
-            Intent intent = new Intent(RemovePickupItems.this, EditPickupMenu.class);
+            Intent intent = new Intent(RemovePickupItems.this,
+                    EditPickupMenu.class);
             intent.putExtra("nuxrpd", Integer.toString(pickup.getNuxrpd()));
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);

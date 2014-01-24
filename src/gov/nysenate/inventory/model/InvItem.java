@@ -13,9 +13,12 @@ public class InvItem implements Parcelable
     String nusenate = "";
     String cdcategory = "";
     String cdlocat = "";
+    String cdloctype = "+";
     String cdintransit = "N";
     String cdcommodity = "";
     String decomments = "";
+    String actionNeeded = "";
+    String cdstatus = "A";
 
     boolean selected = false;
 
@@ -73,12 +76,28 @@ public class InvItem implements Parcelable
         this.cdlocat = cdlocat;
     }
 
+    public String getCdloctype() {
+        return cdloctype;
+    }
+
+    public void setCdloctype(String cdloctype) {
+        this.cdloctype = cdloctype;
+    }
+
     public String getCdintransit() {
         return cdintransit;
     }
 
     public void setCdintransit(String cdlocat) {
         this.cdintransit = cdintransit;
+    }
+
+    public String getCdstatus() {
+        return cdstatus;
+    }
+
+    public void setCdstatus(String cdstatus) {
+        this.cdstatus = cdstatus;
     }
 
     public String getType() {
@@ -116,6 +135,22 @@ public class InvItem implements Parcelable
 
     public String getDecomments() {
         return decomments;
+    }
+
+    public String getActionNeeded() {
+        return actionNeeded;
+    }
+
+    public void setActionNeeded() {
+        setActionNeeded(null);
+    }
+
+    public void setActionNeeded(String actionNeeded) {
+        if (actionNeeded == null) {
+            this.actionNeeded = "";
+        } else {
+            this.actionNeeded = actionNeeded;
+        }
     }
 
     public String toJSON() {

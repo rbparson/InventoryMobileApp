@@ -54,25 +54,27 @@ public class CommentsDialog extends DialogFragment
                                 + "</font>"))
                 .setMessage(Html.fromHtml(msg))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        for (CommentsDialogListener commentsDialogListener : listeners)
-                            commentsDialogListener
-                                    .onCommentOKButtonClicked(etComments
-                                            .getText().toString());
-                        dismiss();
-                    }
-                })
-                .setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // cancelMsg();
-                        dismiss();
-                    }
-                });
+                .setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                for (CommentsDialogListener commentsDialogListener : listeners)
+                                    commentsDialogListener
+                                            .onCommentOKButtonClicked(etComments
+                                                    .getText().toString());
+                                dismiss();
+                            }
+                        })
+                .setNegativeButton(Html.fromHtml("<b>No</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // cancelMsg();
+                                dismiss();
+                            }
+                        });
 
         if (senateActivity.dialogComments != null) {
             etComments.setText(senateActivity.dialogComments);
@@ -99,30 +101,34 @@ public class CommentsDialog extends DialogFragment
         alertDialogBuilder.setTitle(Html.fromHtml(cancelTitle));
 
         // set dialog message
-        alertDialogBuilder.setMessage(Html.fromHtml(cancelMsg))
+        alertDialogBuilder
+                .setMessage(Html.fromHtml(cancelMsg))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        dismiss();
-                    }
-                })
-                .setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, we need to reopen the
-                        // original Dialog
-                        senateActivity.dialogTitle = title;
-                        senateActivity.dialogMsg = msg;
-                        senateActivity.dialogComments = etComments.getText()
-                                .toString();
-                        senateActivity.reOpenCommentsDialog();
-                    }
-                });
+                .setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                dismiss();
+                            }
+                        })
+                .setNegativeButton(Html.fromHtml("<b>No</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, we need to reopen
+                                // the
+                                // original Dialog
+                                senateActivity.dialogTitle = title;
+                                senateActivity.dialogMsg = msg;
+                                senateActivity.dialogComments = etComments
+                                        .getText().toString();
+                                senateActivity.reOpenCommentsDialog();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();

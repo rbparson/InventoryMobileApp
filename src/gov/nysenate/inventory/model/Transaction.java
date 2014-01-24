@@ -11,7 +11,8 @@ import com.google.gson.Gson;
  * <p>
  * Adds Domain Logic methods.
  */
-public class Transaction {
+public class Transaction
+{
     private int nuxrpd;
     private Location origin;
     private Location destination;
@@ -87,7 +88,7 @@ public class Transaction {
 
     public ArrayList<String> getNotCheckedItems() {
         ArrayList<String> notCheckedItems = new ArrayList<String>();
-        for (InvItem item: pickupItems) {
+        for (InvItem item : pickupItems) {
             if (!checkedItems.contains(item.getNusenate())) {
                 notCheckedItems.add(item.getNusenate());
             }
@@ -321,7 +322,7 @@ public class Transaction {
 
     public void setCheckedItems(ArrayList<InvItem> checkedItems) {
         this.checkedItems.clear();
-        for (InvItem item: checkedItems) {
+        for (InvItem item : checkedItems) {
             this.checkedItems.add(item.getNusenate());
         }
     }
@@ -357,6 +358,7 @@ public class Transaction {
     public void setNuxrsccptsign(String nuxraccptsign) {
         this.nuxraccptsign = nuxraccptsign;
     }
+
     public String getOriginFullAddress() {
         return origin.getFullAddress();
     }

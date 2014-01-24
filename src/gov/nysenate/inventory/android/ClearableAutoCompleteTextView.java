@@ -35,26 +35,28 @@ public class ClearableAutoCompleteTextView extends AutoCompleteTextView
     public boolean clearField = true;
     private String clearMsg = "Do you want to clear this field?";
     List<ClearButtonListener> listeners = new ArrayList<ClearButtonListener>();
-    OnKeyListener suppressEnterTab = new OnKeyListener() {
+    OnKeyListener suppressEnterTab = new OnKeyListener()
+    {
 
         @Override
-        public boolean onKey (View v, int keyCode, KeyEvent event) {
+        public boolean onKey(View v, int keyCode, KeyEvent event) {
             // TODO Auto-generated method stub
             if (event.getAction() == KeyEvent.ACTION_DOWN
-                    && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER || event.getKeyCode() == KeyEvent.KEYCODE_TAB) ) {
+                    && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER || event
+                            .getKeyCode() == KeyEvent.KEYCODE_TAB)) {
                 if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                        Log.i("event", "ENTER captured");
+                    Log.i("event", "ENTER captured");
                 }
                 if (event.getKeyCode() == KeyEvent.KEYCODE_TAB) {
                     Log.i("event", "TAB captured");
-            }
+                }
 
                 return false;
-            } 
+            }
             return false;
         }
     };
-    
+
     public ClearableAutoCompleteTextView(Context context) {
         super(context);
 
@@ -118,7 +120,9 @@ public class ClearableAutoCompleteTextView extends AutoCompleteTextView
                                 context);
                         // Add the buttons
                         builder.setMessage(clearMsg)
-                                .setPositiveButton(Html.fromHtml(getResources().getString(R.string.ok_button)),
+                                .setPositiveButton(
+                                        Html.fromHtml(getResources().getString(
+                                                R.string.ok_button)),
                                         new DialogInterface.OnClickListener()
                                         {
                                             @Override
@@ -133,7 +137,9 @@ public class ClearableAutoCompleteTextView extends AutoCompleteTextView
 
                                             }
                                         })
-                                .setNegativeButton(Html.fromHtml(getResources().getString(R.string.cancel_button)),
+                                .setNegativeButton(
+                                        Html.fromHtml(getResources().getString(
+                                                R.string.cancel_button)),
                                         new DialogInterface.OnClickListener()
                                         {
                                             @Override
@@ -153,7 +159,8 @@ public class ClearableAutoCompleteTextView extends AutoCompleteTextView
                         et.setText("");
                         ClearableAutoCompleteTextView.this.removeClearButton();
                         for (ClearButtonListener clearButtonListener : listeners)
-                            clearButtonListener.onClearButtonPressed((AdapterView) v, v);
+                            clearButtonListener.onClearButtonPressed(
+                                    (AdapterView) v, v);
                     }
 
                 } else {
@@ -172,8 +179,9 @@ public class ClearableAutoCompleteTextView extends AutoCompleteTextView
 
                 ClearableAutoCompleteTextView.this.manageClearButton();
                 SenateActivity.timer.cancel();
-                if(!SenateActivity.getCurrentActivity().equalsIgnoreCase("LoginActivity"))
-                SenateActivity.timer.start();
+                if (!SenateActivity.getCurrentActivity().equalsIgnoreCase(
+                        "LoginActivity"))
+                    SenateActivity.timer.start();
             }
 
             @Override
@@ -202,17 +210,17 @@ public class ClearableAutoCompleteTextView extends AutoCompleteTextView
     public String getClearMsg() {
         return this.clearMsg;
     }
-    
+
     public boolean isEnterTabSuppressed() {
         return suppressEnter;
-        
+
     }
-    
+
     public void suppressEnterTabKey() {
         this.setOnKeyListener(suppressEnterTab);
         suppressEnter = true;
     }
-    
+
     public void allowEnterTabKey() {
         this.setOnKeyListener(null);
         suppressEnter = false;
@@ -240,6 +248,5 @@ public class ClearableAutoCompleteTextView extends AutoCompleteTextView
     public void addClearButtonListener(ClearButtonListener listener) {
         listeners.add(listener);
     }
-    
-    
+
 }

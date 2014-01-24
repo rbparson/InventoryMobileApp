@@ -111,8 +111,8 @@ public class Delivery2 extends SenateActivity
         Delivery1.progBarDelivery1.setVisibility(View.VISIBLE);
 
     }
-    
-    //testing git
+
+    // testing git
 
     public void noServerResponse() {
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
@@ -126,24 +126,26 @@ public class Delivery2 extends SenateActivity
                 .setMessage(
                         Html.fromHtml("!!ERROR: There was <font color='RED'><b>NO SERVER RESPONSE</b></font>. <br/> Please contact STS/BAC."))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
 
-                        CharSequence text = "No action taken due to NO SERVER RESPONSE";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "No action taken due to NO SERVER RESPONSE";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
@@ -317,14 +319,16 @@ public class Delivery2 extends SenateActivity
                         }
 
                         if (shipId > 0) {
-                            pickupAdzipcode += " [" + "<font color='#ff0000'>R</font>" + "]";
+                            pickupAdzipcode += " ["
+                                    + "<font color='#ff0000'>R</font>" + "]";
                         }
 
                         // Log.i("JSON VALUES "+x, object.toString());
                         currentPickupGroup = new PickupGroup(nuxrpd,
                                 pickupDateTime, pickupFrom, pickupRelBy,
                                 pickupLocat, pickupAdstreet1, pickupAdcity,
-                                pickupAdstate, pickupAdzipcode, pickupItemCount, shipId);
+                                pickupAdstate, pickupAdzipcode,
+                                pickupItemCount, shipId);
                         // System.out.println(nuxrpd+" ,  "+pickupDateTime+" ,"+
                         // pickupFrom+", "+pickupRelBy+" , "+pickupLocat+" , "+pickupItemCount);
 

@@ -28,8 +28,6 @@ import android.view.View.OnKeyListener;
 import android.widget.AdapterView;
 import android.widget.EditText;
 
-
-
 public class ClearableEditText extends EditText
 {
 
@@ -39,52 +37,54 @@ public class ClearableEditText extends EditText
     private boolean showClearMsg = false;
     Context context = null;
     public boolean clearField = true;
-    private boolean suppressEnter = false;    
+    private boolean suppressEnter = false;
     private String clearMsg = "Do you want to clear this field?";
-    List<ClearButtonListener> listeners = new ArrayList<ClearButtonListener>();    
-    CountDownTimer timer = new CountDownTimer(1 *60 * 1000, 1000) {
-		
-		@Override
-		public void onTick(long millisUntilFinished) {
-			// TODO Auto-generated method stub
-			System.out.println(this.getClass().getSimpleName());
-			System.out.println(millisUntilFinished/1000);
-		}
-		
-		@Override
-		public void onFinish() {
-			// TODO Auto-generated method stub
-			if(!this.getClass().getSimpleName().equalsIgnoreCase("LoginActivity"))
-			{
-				Intent intentTimeout = new Intent(context, LoginActivity.class);
-				intentTimeout.addFlags(200);
-				context.startActivity(intentTimeout);
-			}
-	        
-			
-		}
-		
-	};
-	
-    OnKeyListener suppressEnterTab = new OnKeyListener() {
+    List<ClearButtonListener> listeners = new ArrayList<ClearButtonListener>();
+    CountDownTimer timer = new CountDownTimer(1 * 60 * 1000, 1000)
+    {
 
         @Override
-        public boolean onKey (View v, int keyCode, KeyEvent event) {
+        public void onTick(long millisUntilFinished) {
+            // TODO Auto-generated method stub
+            System.out.println(this.getClass().getSimpleName());
+            System.out.println(millisUntilFinished / 1000);
+        }
+
+        @Override
+        public void onFinish() {
+            // TODO Auto-generated method stub
+            if (!this.getClass().getSimpleName()
+                    .equalsIgnoreCase("LoginActivity")) {
+                Intent intentTimeout = new Intent(context, LoginActivity.class);
+                intentTimeout.addFlags(200);
+                context.startActivity(intentTimeout);
+            }
+
+        }
+
+    };
+
+    OnKeyListener suppressEnterTab = new OnKeyListener()
+    {
+
+        @Override
+        public boolean onKey(View v, int keyCode, KeyEvent event) {
             // TODO Auto-generated method stub
             if (event.getAction() == KeyEvent.ACTION_DOWN
-                    && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER || event.getKeyCode() == KeyEvent.KEYCODE_TAB) ) {
+                    && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER || event
+                            .getKeyCode() == KeyEvent.KEYCODE_TAB)) {
                 if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                        Log.i("event", "ENTER captured");
+                    Log.i("event", "ENTER captured");
                 }
                 if (event.getKeyCode() == KeyEvent.KEYCODE_TAB) {
                     Log.i("event", "TAB captured");
-            }
+                }
 
                 return false;
-            } 
+            }
             return false;
         }
-    };    
+    };
 
     public ClearableEditText(Context context) {
         super(context);
@@ -147,7 +147,9 @@ public class ClearableEditText extends EditText
                                 context);
                         // Add the buttons
                         builder.setMessage(clearMsg)
-                                .setPositiveButton(Html.fromHtml(getResources().getString(R.string.ok_button)),
+                                .setPositiveButton(
+                                        Html.fromHtml(getResources().getString(
+                                                R.string.ok_button)),
                                         new DialogInterface.OnClickListener()
                                         {
                                             @Override
@@ -161,7 +163,9 @@ public class ClearableEditText extends EditText
                                                         .removeClearButton();
                                             }
                                         })
-                                .setNegativeButton(Html.fromHtml(getResources().getString(R.string.cancel_button)),
+                                .setNegativeButton(
+                                        Html.fromHtml(getResources().getString(
+                                                R.string.cancel_button)),
                                         new DialogInterface.OnClickListener()
                                         {
                                             @Override
@@ -181,7 +185,8 @@ public class ClearableEditText extends EditText
                         et.setText("");
                         ClearableEditText.this.removeClearButton();
                         for (ClearButtonListener clearButtonListener : listeners)
-                            clearButtonListener.onClearButtonPressed((AdapterView) v, v);
+                            clearButtonListener.onClearButtonPressed(
+                                    (AdapterView) v, v);
                     }
 
                 } else {
@@ -192,7 +197,6 @@ public class ClearableEditText extends EditText
                 return false;
             }
         });
-        
 
         this.addTextChangedListener(new TextWatcher()
         {
@@ -202,8 +206,9 @@ public class ClearableEditText extends EditText
 
                 ClearableEditText.this.manageClearButton();
                 SenateActivity.timer.cancel();
-                if(!SenateActivity.getCurrentActivity().equalsIgnoreCase("LoginActivity"))
-                SenateActivity.timer.start();
+                if (!SenateActivity.getCurrentActivity().equalsIgnoreCase(
+                        "LoginActivity"))
+                    SenateActivity.timer.start();
             }
 
             @Override
@@ -259,16 +264,16 @@ public class ClearableEditText extends EditText
 
     public boolean isEnterTabSuppressed() {
         return suppressEnter;
-        
+
     }
-    
+
     public void suppressEnterTabKey() {
         this.setOnKeyListener(suppressEnterTab);
         suppressEnter = true;
     }
-    
+
     public void allowEnterTabKey() {
         this.setOnKeyListener(null);
         suppressEnter = false;
-    }      
+    }
 }

@@ -136,11 +136,11 @@ public class LoginActivity extends SenateActivity
         registerBaseActivityReceiver();
         // See if there is a Parent Activity, if there was one, then it must
         // have timed out.
-        //Log.i("MAIN", "TIMEOUTFROM INITIALIZED TO NULL");
+        // Log.i("MAIN", "TIMEOUTFROM INITIALIZED TO NULL");
         try {
             Intent fromIntent = getIntent();
             timeoutFrom = fromIntent.getStringExtra("TIMEOUTFROM");
-            //Log.i("MAIN", "TIMEOUTFROM:" + timeoutFrom);
+            // Log.i("MAIN", "TIMEOUTFROM:" + timeoutFrom);
         } catch (Exception e) {
             timeoutFrom = null;
         }
@@ -149,7 +149,7 @@ public class LoginActivity extends SenateActivity
             Intent fromIntent = getIntent();
             updateChecked = Boolean.valueOf(fromIntent
                     .getStringExtra("UPDATECHECKED"));
-            //Log.i("UPDATECHECKED", "RETURNED:" + updateChecked);
+            // Log.i("UPDATECHECKED", "RETURNED:" + updateChecked);
         } catch (Exception e2) {
             updateChecked = false;
             Log.i("UPDATECHECKED", "EXCEPTION SO ASSUME FALSE");
@@ -159,17 +159,18 @@ public class LoginActivity extends SenateActivity
         tvWarnLabel = (TextView) findViewById(R.id.tvWarnLabel);
 
         if (timeoutFrom != null) {
-            //Log.i("MAIN", "THIS is going to be treated as a Timeout Activity");
+            // Log.i("MAIN",
+            // "THIS is going to be treated as a Timeout Activity");
             timeoutActivity = true;
         }
 
         currentActivity = this;
-        //Log.i("MAIN", "!!!!LOGINACTIVITY onCreate");
+        // Log.i("MAIN", "!!!!LOGINACTIVITY onCreate");
         resources = this.getResources();
         user_name = (ClearableEditText) findViewById(R.id.user_name);
         password = (ClearableEditText) findViewById(R.id.password);
         password.addTextChangedListener(senateTagPWDWatcher);
-        //testSQLlite();
+        // testSQLlite();
         if (timeoutActivity) {
             user_name.setKeyListener(null);
             user_name.setText(nauser);
@@ -210,6 +211,12 @@ public class LoginActivity extends SenateActivity
                                           // project
             URL = properties.get("WEBAPP_BASE_URL").toString();
             this.defrmint = properties.get("DEFRMINT").toString();
+            try {
+                this.timeoutTimerMinutes = new Integer((String)properties.get("TIMEOUTMINUTES")).intValue();
+            }
+            catch (Exception e0) {
+                this.timeoutTimerMinutes = 15;  // Default Timeout
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -441,44 +448,46 @@ public class LoginActivity extends SenateActivity
                             .setTitle(
                                     Html.fromHtml("<font color='#000055'>Connect to NY Senate Network</font>"))
 
-                    // Add the buttons
-                    .setPositiveButton(Html.fromHtml("<b>Yes</b>"),
-                            new DialogInterface.OnClickListener()
-                            {
-                                @Override
-                                public void onClick(DialogInterface dialog,
-                                        int id) {
-                                    WifiConfiguration conf = new WifiConfiguration();
-                                    conf.SSID = "\"" + senateSSID + "\""; // Please
-                                                                          // note
-                                                                          // the
-                                                                          // quotes.
-                                                                          // String
-                                                                          // should
-                                                                          // contain
-                                                                          // ssid
-                                                                          // in
-                                                                          // quotes
-                                    conf.preSharedKey = "\"" + senateSSIDpwd
-                                            + "\"";
-                                    mainWifi.addNetwork(conf);
-                                    List<WifiConfiguration> list = mainWifi
-                                            .getConfiguredNetworks();
-                                    for (WifiConfiguration i : list) {
-                                        if (i.SSID != null
-                                                && i.SSID.equals("\""
-                                                        + senateSSID + "\"")) {
-                                            mainWifi.disconnect();
-                                            mainWifi.enableNetwork(i.networkId,
-                                                    true);
-                                            mainWifi.reconnect();
+                            // Add the buttons
+                            .setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                                    new DialogInterface.OnClickListener()
+                                    {
+                                        @Override
+                                        public void onClick(
+                                                DialogInterface dialog, int id) {
+                                            WifiConfiguration conf = new WifiConfiguration();
+                                            conf.SSID = "\"" + senateSSID
+                                                    + "\""; // Please
+                                                            // note
+                                                            // the
+                                                            // quotes.
+                                                            // String
+                                                            // should
+                                                            // contain
+                                                            // ssid
+                                                            // in
+                                                            // quotes
+                                            conf.preSharedKey = "\""
+                                                    + senateSSIDpwd + "\"";
+                                            mainWifi.addNetwork(conf);
+                                            List<WifiConfiguration> list = mainWifi
+                                                    .getConfiguredNetworks();
+                                            for (WifiConfiguration i : list) {
+                                                if (i.SSID != null
+                                                        && i.SSID.equals("\""
+                                                                + senateSSID
+                                                                + "\"")) {
+                                                    mainWifi.disconnect();
+                                                    mainWifi.enableNetwork(
+                                                            i.networkId, true);
+                                                    mainWifi.reconnect();
 
-                                            break;
+                                                    break;
+                                                }
+                                            }
+
                                         }
-                                    }
-
-                                }
-                            });
+                                    });
                     builder.setNegativeButton(Html.fromHtml("<b>No</b>"),
                             new DialogInterface.OnClickListener()
                             {
@@ -632,7 +641,7 @@ public class LoginActivity extends SenateActivity
         // get the app version Code for checking
         this.versionCode = pInfo.versionCode;
         this.versionName = pInfo.versionName;
-        //Log.i("onCreate VERSION CODE", "versionCode:" + versionCode);
+        // Log.i("onCreate VERSION CODE", "versionCode:" + versionCode);
         // display the current version in a TextView
 
         // Broadcast receiver for our Web Request
@@ -671,7 +680,8 @@ public class LoginActivity extends SenateActivity
                         try {
                             responseObj = new JSONObject(res);
                             boolean success = responseObj.getBoolean("success");
-                            //Log.i("LoginActivity", "CheckAppVersion returned success:"+ success);
+                            // Log.i("LoginActivity",
+                            // "CheckAppVersion returned success:"+ success);
                             // if the reponse was successful check further
                             if (success) {
                                 // get the latest version from the JSON string
@@ -685,10 +695,12 @@ public class LoginActivity extends SenateActivity
                                         .getString("latestVersionName");
                                 appURI = responseObj.getString("appURI");
                                 // check if we need to upgrade?
-/*                                Log.i("LoginActivity","CheckAppVersion: Is latestVersion:"
-                                                + latestVersion
-                                                + " > versionCode:"
-                                                + versionCode);*/
+                                /*
+                                 * Log.i("LoginActivity",
+                                 * "CheckAppVersion: Is latestVersion:" +
+                                 * latestVersion + " > versionCode:" +
+                                 * versionCode);
+                                 */
 
                                 if (latestVersion > versionCode) {
                                     updateApp = true;
@@ -864,7 +876,7 @@ public class LoginActivity extends SenateActivity
                             .get("WEBAPP_BASE_URL").toString();
                     AsyncTask<String, String, String> resr1 = new RequestTask()
                             .execute(URL + "/Login?user=" + user_name + "&pwd="
-                                    + password+"&defrmint="+defrmint);
+                                    + password + "&defrmint=" + defrmint);
                     try {
                         res = resr1.get().trim().toString();
                         if (res == null) {
@@ -907,7 +919,7 @@ public class LoginActivity extends SenateActivity
                 //
 
                 String level = res.split(" ")[1];
-                InvApplication app = ((InvApplication)getApplicationContext());
+                InvApplication app = ((InvApplication) getApplicationContext());
                 app.setCdseclevel(Integer.valueOf(level));
 
                 if (timeoutActivity) {
@@ -921,19 +933,20 @@ public class LoginActivity extends SenateActivity
                             R.anim.slide_out_left);
                 }
             } else if (res.trim().startsWith("!!ERROR: ")) {
-                if (res.trim().startsWith("!!ERROR: No security clearance has been given")) {
+                if (res.trim().startsWith(
+                        "!!ERROR: No security clearance has been given")) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(
                             LoginActivity.this);
-                    builder.setMessage(
-                            Html.fromHtml(res.trim()))
+                    builder.setMessage(Html.fromHtml(res.trim()))
                             .setTitle(
                                     Html.fromHtml("<b><font color='#000055'>NO SECURITY CLEARANCE FOR THIS APP</font></b>"))
-                            .setPositiveButton(Html.fromHtml("<b>Close App</b>"),
+                            .setPositiveButton(
+                                    Html.fromHtml("<b>Close App</b>"),
                                     new DialogInterface.OnClickListener()
                                     {
                                         @Override
-                                        public void onClick(DialogInterface dialog,
-                                                int id) {
+                                        public void onClick(
+                                                DialogInterface dialog, int id) {
                                             // User cancelled the dialog
                                             // finish();
                                             closeAllActivities();
@@ -942,9 +955,8 @@ public class LoginActivity extends SenateActivity
                     // show the alert message
                     Dialog dialog = builder.create();
                     dialog.setCanceledOnTouchOutside(false);
-                    dialog.show();                    
-                }
-                else {
+                    dialog.show();
+                } else {
                     int duration = Toast.LENGTH_LONG;
                     Toast toast = Toast.makeText(this, res.trim(), duration);
                     toast.setGravity(Gravity.CENTER, 0, 0);
@@ -977,33 +989,36 @@ public class LoginActivity extends SenateActivity
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 
         // set title
-        alertDialogBuilder.setTitle(Html
-                .fromHtml("<b><font color='#000055'>NO SERVER RESPONSE</font></b>"));
+        alertDialogBuilder
+                .setTitle(Html
+                        .fromHtml("<b><font color='#000055'>NO SERVER RESPONSE</font></b>"));
 
         // set dialog message
         alertDialogBuilder
                 .setMessage(
                         Html.fromHtml("!!ERROR: There was <font color='RED'><b>NO SERVER RESPONSE</b></font>. <br/> Please contact STS/BAC."))
                 .setCancelable(false)
-                .setPositiveButton( Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
 
-                        CharSequence text = "No action taken due to NO SERVER RESPONSE";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "No action taken due to NO SERVER RESPONSE";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
-                        progressBarLogin.setVisibility(View.INVISIBLE);
-                        buttonLogin.getBackground().setAlpha(255);
-                        dialog.dismiss();
-                    }
-                });
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
+                                progressBarLogin.setVisibility(View.INVISIBLE);
+                                buttonLogin.getBackground().setAlpha(255);
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
@@ -1110,29 +1125,32 @@ public class LoginActivity extends SenateActivity
                 progressBarLogin.setVisibility(View.VISIBLE);
                 String u_name = user_name.getText().toString();
                 String pwd = password.getText().toString();
-                
-                if (u_name.trim().length()==0 & pwd.trim().length()==0) {
-                    new Toasty(getApplicationContext(), "!!ERRROR: Username and password must be entered.").showMessage();
+
+                if (u_name.trim().length() == 0 & pwd.trim().length() == 0) {
+                    new Toasty(getApplicationContext(),
+                            "!!ERRROR: Username and password must be entered.")
+                            .showMessage();
+                    buttonLogin.getBackground().setAlpha(255);
+                    progressBarLogin.setVisibility(View.INVISIBLE);
+                    return;
+                } else if (u_name.trim().length() == 0) {
+                    new Toasty(getApplicationContext(),
+                            "!!ERRROR: Username must be entered.")
+                            .showMessage();
+                    buttonLogin.getBackground().setAlpha(255);
+                    progressBarLogin.setVisibility(View.INVISIBLE);
+                    return;
+                } else if (pwd.trim().length() == 0) {
+                    new Toasty(getApplicationContext(),
+                            "!!ERRROR: Password must be entered.")
+                            .showMessage();
                     buttonLogin.getBackground().setAlpha(255);
                     progressBarLogin.setVisibility(View.INVISIBLE);
                     return;
                 }
-                else if (u_name.trim().length()==0) {
-                    new Toasty(getApplicationContext(), "!!ERRROR: Username must be entered.").showMessage();
-                    buttonLogin.getBackground().setAlpha(255);
-                    progressBarLogin.setVisibility(View.INVISIBLE);
-                    return;
-               }
-               else if (pwd.trim().length()==0) {
-                   new Toasty(getApplicationContext(), "!!ERRROR: Password must be entered.").showMessage();
-                   buttonLogin.getBackground().setAlpha(255);
-                   progressBarLogin.setVisibility(View.INVISIBLE);
-                   return;
-               }
-                
-                
-               this.login(u_name, pwd);
-               progressBarLogin.setVisibility(View.INVISIBLE);
+
+                this.login(u_name, pwd);
+                progressBarLogin.setVisibility(View.INVISIBLE);
                 /*
                  * Intent intent = new Intent(this,
                  * DisplayMessageActivity.class); // Intent intent = new
@@ -1167,18 +1185,16 @@ public class LoginActivity extends SenateActivity
     public void testSQLlite() {
         DBAdapter db = new DBAdapter(this);
         try {
-             db.resetDB();
-             db.truncateTable("ad12verinv");
-            
-             long rowsInserted = db.insert("ad12verinv",
-             "nuserial|nusenate|decommodityf|dttxnorigin|natxnorguser|dttxnupdate|natxnupduser"
-             ,
-             "111111|NEWSDFJS|THIS IS THE FIRST TEST|NOW|HEITNER|NOW|HEITNER"
-             );
-             
-             Log.i(LoginActivity.class.getName(),
-             "ROWS INSERTED:"+rowsInserted);
-             
+            db.resetDB();
+            db.truncateTable("ad12verinv");
+
+            long rowsInserted = db
+                    .insert("ad12verinv",
+                            "nuserial|nusenate|decommodityf|dttxnorigin|natxnorguser|dttxnupdate|natxnupduser",
+                            "111111|NEWSDFJS|THIS IS THE FIRST TEST|NOW|HEITNER|NOW|HEITNER");
+
+            Log.i(LoginActivity.class.getName(), "ROWS INSERTED:"
+                    + rowsInserted);
 
             Cursor mCursor = db.rawQuery("SELECT * FROM ad12serial", null);
 
@@ -1242,8 +1258,8 @@ public class LoginActivity extends SenateActivity
      * LoginActivity.this); builder.setMessage( "There is newer version (" +
      * latestVersionName + ":" + latestVersion +
      * ") of this application available. In order to use this app, you MUST upgrade. Click OK to upgrade now?"
-     * ) .setPositiveButton(Html.fromHtml("<b>OK</b>"), new DialogInterface.OnClickListener() { // if
-     * the user agrees to upgrade
+     * ) .setPositiveButton(Html.fromHtml("<b>OK</b>"), new
+     * DialogInterface.OnClickListener() { // if the user agrees to upgrade
      * 
      * @Override public void onClick( DialogInterface dialog, int id) { // start
      * downloading the file // using the download manager downloadManager =
@@ -1256,7 +1272,8 @@ public class LoginActivity extends SenateActivity
      * request.setDestinationInExternalFilesDir( LoginActivity.this,
      * Environment.DIRECTORY_DOWNLOADS, "InventoryMobileApp.apk");
      * downloadReference = downloadManager .enqueue(request); } })
-     * .setNegativeButton(Html.fromHtml("<b>Close App</b>"), new DialogInterface.OnClickListener() {
+     * .setNegativeButton(Html.fromHtml("<b>Close App</b>"), new
+     * DialogInterface.OnClickListener() {
      * 
      * @Override public void onClick( DialogInterface dialog, int id) { // User
      * cancelled the dialog // finish(); closeAllActivities(); } }); // show the

@@ -8,7 +8,9 @@ import android.view.ViewGroup;
 import android.widget.ListAdapter;
 import android.widget.SpinnerAdapter;
 
-public class NothingSelectedSpinnerAdapter implements SpinnerAdapter, ListAdapter {
+public class NothingSelectedSpinnerAdapter implements SpinnerAdapter,
+        ListAdapter
+{
 
     protected static final int EXTRA = 1;
     protected SpinnerAdapter adapter;
@@ -24,7 +26,8 @@ public class NothingSelectedSpinnerAdapter implements SpinnerAdapter, ListAdapte
     }
 
     public NothingSelectedSpinnerAdapter(SpinnerAdapter spinnerAdapter,
-            int nothingSelectedLayout, int nothingSelectedDropdownLayout, Context context) {
+            int nothingSelectedLayout, int nothingSelectedDropdownLayout,
+            Context context) {
         this.adapter = spinnerAdapter;
         this.context = context;
         this.nothingSelectedLayout = nothingSelectedLayout;
@@ -47,15 +50,15 @@ public class NothingSelectedSpinnerAdapter implements SpinnerAdapter, ListAdapte
     @Override
     public View getDropDownView(int position, View convertView, ViewGroup parent) {
         if (position == 0) {
-            return nothingSelectedDropdownLayout == -1 ?
-              new View(context) :
-              getNothingSelectedDropdownView(parent);
+            return nothingSelectedDropdownLayout == -1 ? new View(context)
+                    : getNothingSelectedDropdownView(parent);
         }
         return adapter.getDropDownView(position - EXTRA, null, parent);
     }
 
     protected View getNothingSelectedDropdownView(ViewGroup parent) {
-        return layoutInflater.inflate(nothingSelectedDropdownLayout, parent, false);
+        return layoutInflater.inflate(nothingSelectedDropdownLayout, parent,
+                false);
     }
 
     @Override
@@ -73,9 +76,8 @@ public class NothingSelectedSpinnerAdapter implements SpinnerAdapter, ListAdapte
     public int getItemViewType(int position) {
         // This method determines what is the convertView, this should
         // return 1 for pos 0 or return 0 otherwise.
-        return position == 0 ?
-               getViewTypeCount() - EXTRA :
-               adapter.getItemViewType(position - EXTRA);
+        return position == 0 ? getViewTypeCount() - EXTRA : adapter
+                .getItemViewType(position - EXTRA);
     }
 
     @Override

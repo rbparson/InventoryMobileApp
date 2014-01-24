@@ -99,28 +99,32 @@ public class KeywordDialog extends DialogFragment
                         Html.fromHtml("<font color='#000055'>" + title
                                 + "</font>"))
                 .setMessage(Html.fromHtml(msg))
-                .setPositiveButton(Html.fromHtml("<b>OK</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        adapter.notifyDataSetChanged();
-                        senateActivity.dialogKeywords = adapter.toString();
-                        // Log.i("OK Button",
-                        // "KeywordsSet:"+senateActivity.dialogKeywords);
-                        if (!senateActivity.dialogKeywords
-                                .equalsIgnoreCase(keywordListOrig)) {
-                            for (OnKeywordChangeListener onKeywordChangeListener : listeners) {
+                .setPositiveButton(Html.fromHtml("<b>OK</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                adapter.notifyDataSetChanged();
+                                senateActivity.dialogKeywords = adapter
+                                        .toString();
                                 // Log.i("OK Button",
-                                // "onKeywordChangeListener.OnKeywordChange:"+senateActivity.dialogKeywords);
-                                onKeywordChangeListener.OnKeywordChange(
-                                        KeywordDialog.this, lvKeywords,
-                                        senateActivity.dialogKeywords);
-                            }
-                        }
+                                // "KeywordsSet:"+senateActivity.dialogKeywords);
+                                if (!senateActivity.dialogKeywords
+                                        .equalsIgnoreCase(keywordListOrig)) {
+                                    for (OnKeywordChangeListener onKeywordChangeListener : listeners) {
+                                        // Log.i("OK Button",
+                                        // "onKeywordChangeListener.OnKeywordChange:"+senateActivity.dialogKeywords);
+                                        onKeywordChangeListener
+                                                .OnKeywordChange(
+                                                        KeywordDialog.this,
+                                                        lvKeywords,
+                                                        senateActivity.dialogKeywords);
+                                    }
+                                }
 
-                        dismiss();
-                    }
-                })
+                                dismiss();
+                            }
+                        })
                 .setNegativeButton(Html.fromHtml("<b>Cancel</b>"),
                         new DialogInterface.OnClickListener()
                         {

@@ -9,9 +9,11 @@ import gov.nysenate.inventory.android.R.id;
 import gov.nysenate.inventory.android.R.layout;
 import gov.nysenate.inventory.android.R.menu;
 import gov.nysenate.inventory.model.Location;
+import gov.nysenate.inventory.util.TransactionParser;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -22,6 +24,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -51,6 +54,26 @@ public class Pickup1 extends SenateActivity
     private String URL = "";
     private String originSummary = null;
     private String destinationSummary = null;
+    public String status = null;
+    public String loc_code_str = null;
+    public String cdloctypefrom = null;
+    public String cdlocatfrom = null;
+    public String cdrespctrhdfrom = null;
+    public String adstreet1from = null;
+    public String adcityfrom = null;
+    public String adstatefrom = null;
+    public String adzipcodefrom = null;
+    public String descriptfrom = null;
+    public String nucountfrom = null;
+    public String cdloctypeto = null;
+    public String cdlocatto = null;
+    public String cdrespctrhdto = null;
+    public String adstreet1to = null;
+    public String adcityto = null;
+    public String adstateto = null;
+    public String adzipcodeto = null;
+    public String descriptto = null;
+    public String nucountto = null;
     private Location origin;
     private Location destination;
     private ArrayList<String> allLocations = new ArrayList<String>();
@@ -70,15 +93,28 @@ public class Pickup1 extends SenateActivity
     String timeoutFrom = "pickup1";
     public final int LOCCODELIST_TIMEOUT = 101,
             FROMLOCATIONDETAILS_TIMEOUT = 102, TOLOCATIONDETAILS_TIMEOUT = 103;
-    
+
     private int lastSize = 0;
+    String className = this.getClass().getSimpleName();
+    static String nuxractivity = "";
+    private List<Location> locations;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pickup1);
         registerBaseActivityReceiver();
-
+        try {
+            autosave = getIntent().getParcelableExtra("autosave");
+            if (autosave != null) {
+                System.out.println("****PICKUP1: TRYING TO RESTORE....");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            autosave = null;
+            System.out.println("****PICKUP1: NOTHING TO RESTORE.");
+        }
+                
         tvOffice1 = (TextView) this.findViewById(R.id.tvOffice1);
         tvDescript1 = (TextView) this.findViewById(R.id.tvDescript1);
         tvCount1 = (TextView) this.findViewById(R.id.tvCount1);
@@ -91,12 +127,14 @@ public class Pickup1 extends SenateActivity
         btnPickup1Cont = (Button) findViewById(R.id.btnPickup1Cont);
         btnPickup1Cancel = (Button) findViewById(R.id.btnPickup1Cancel);
 
-        autoCompleteTextView1.addTextChangedListener(new TextWatcher(){
+        autoCompleteTextView1.addTextChangedListener(new TextWatcher()
+        {
 
             @Override
             public void afterTextChanged(Editable arg0) {
-                int currentSize = autoCompleteTextView1.getText().toString().length();
-                if (currentSize==0||currentSize<lastSize) {
+                int currentSize = autoCompleteTextView1.getText().toString()
+                        .length();
+                if (currentSize == 0 || currentSize < lastSize) {
                     tvOffice1.setText("N/A");
                     tvDescript1.setText("N/A");
                     tvCount1.setText("N/A");
@@ -113,18 +151,21 @@ public class Pickup1 extends SenateActivity
             public void onTextChanged(CharSequence s, int start, int before,
                     int count) {
                 // TODO Auto-generated method stub
-                
-            } }
-        );
-        autoCompleteTextView2.addTextChangedListener(new TextWatcher(){
+
+            }
+        });
+        autoCompleteTextView2.addTextChangedListener(new TextWatcher()
+        {
 
             @Override
             public void afterTextChanged(Editable arg0) {
-                int currentSize = autoCompleteTextView2.getText().toString().length();
-                
-                if (currentSize==0||currentSize<lastSize) {
+                int currentSize = autoCompleteTextView2.getText().toString()
+                        .length();
+
+                if (currentSize == 0 || currentSize < lastSize) {
                     tvOffice2.setText("N/A");
                     tvDescript2.setText("N/A");
+                    descriptto =  tvDescript2.getText().toString();
                     tvCount2.setText("N/A");
                 }
             }
@@ -132,17 +173,17 @@ public class Pickup1 extends SenateActivity
             @Override
             public void beforeTextChanged(CharSequence arg0, int arg1,
                     int arg2, int arg3) {
-                lastSize = autoCompleteTextView2.getText().toString().length();                
+                lastSize = autoCompleteTextView2.getText().toString().length();
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before,
                     int count) {
                 // TODO Auto-generated method stub
-                
-            } }
-        );        
-        
+
+            }
+        });
+
         try {
             // TODO: RequestDispatcher.getInstance() as parameter for tests DI.
             getAllLocations();
@@ -159,6 +200,7 @@ public class Pickup1 extends SenateActivity
 
         setupautoCompleteTextView1(adapter);
         setupautoCompleteTextView2(adapter);
+        handleAutosave();
     }
 
     public void noServerResponse() {
@@ -169,21 +211,23 @@ public class Pickup1 extends SenateActivity
                 .setMessage(
                         Html.fromHtml("!!ERROR: There was <font color='RED'><b>NO SERVER RESPONSE</b></font>. <br/> Please contact STS/BAC."))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
-                        CharSequence text = "No action taken due to NO SERVER RESPONSE";
-                        int duration = Toast.LENGTH_SHORT;
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
-                        dialog.dismiss();
-                    }
-                });
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
+                                CharSequence text = "No action taken due to NO SERVER RESPONSE";
+                                int duration = Toast.LENGTH_SHORT;
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
+                                dialog.dismiss();
+                            }
+                        });
         AlertDialog alertDialog = alertDialogBuilder.create();
         alertDialog.show();
     }
@@ -217,9 +261,10 @@ public class Pickup1 extends SenateActivity
         @Override
         public void afterTextChanged(Editable s) {
             fromLocationBeingTyped = true;
-            /*if (autoCompleteTextView1.getText().toString().length() >= 3) {
-                getOriginLocationDetails();
-            }*/
+            /*
+             * if (autoCompleteTextView1.getText().toString().length() >= 3) {
+             * getOriginLocationDetails(); }
+             */
         }
     };
 
@@ -238,11 +283,77 @@ public class Pickup1 extends SenateActivity
         @Override
         public void afterTextChanged(Editable s) {
             toLocationBeingTyped = true;
-            /*if (autoCompleteTextView2.getText().toString().length() >= 3) {
-                getDestinationLocationDetails();
-            }*/
+            /*
+             * if (autoCompleteTextView2.getText().toString().length() >= 3) {
+             * getDestinationLocationDetails(); }
+             */
         }
     };
+
+    public void handleAutosave() {
+        System.out.println("called handleAutosave");
+        if (this.autosave != null) {
+            currentlyRestoringAutosave = true;
+            // System.out.println
+            // ("handleAutosave trying to restore from autosave:"+this.autosave.ge;
+            nuxractivity = String.valueOf(this.autosave.getNuxractivity());
+            this.autoCompleteTextView1.setAdapter(null);
+            autoCompleteTextView1.setText(this.autosave.getLocationEntry());
+            this.tvDescript1.setText(this.autosave.getDescript());
+            
+            this.autoCompleteTextView2.setAdapter(null);
+            autoCompleteTextView2.setText(this.autosave.getLocationToEntry());
+            this.tvDescript2.setText(this.autosave.getDescriptto());
+            
+            descriptfrom =  this.autosave.getDescript();
+            System.out
+                    .println("handleAutosave trying to restore from autosave:"
+                            + this.autosave.getDescript());
+            this.tvOffice1.setText(this.autosave.getCdrespctrhd());
+            System.out
+                    .println("handleAutosave trying to restore from autosave:"
+                            + this.autosave.getCdrespctrhd());
+            cdlocatfrom = this.autosave.getCdlocat();
+            cdloctypefrom = this.autosave.getCdloctype();
+            cdrespctrhdfrom = this.autosave.getCdrespctrhd();
+            adstreet1from = this.autosave.getAdstreet1();
+            adcityfrom = this.autosave.getAdcity();
+            adstatefrom = this.autosave.getAdstate();
+            adzipcodefrom = this.autosave.getAdzipcode();
+            cdlocatto = this.autosave.getCdlocatto();
+            cdloctypeto = this.autosave.getCdloctypeto();
+            cdrespctrhdto = this.autosave.getCdrespctrhdto();
+            adstreet1to = this.autosave.getAdstreet1to();
+            adcityto = this.autosave.getAdcityto();
+            adstateto = this.autosave.getAdstateto();
+            adzipcodeto = this.autosave.getAdzipcodeto();
+            descriptto =  this.autosave.getDescriptto();
+            if (this.autosave.getLocationEntry() != null
+                    && this.autosave.getLocationEntry().trim().length() > 0) {
+                getOriginLocationDetails();
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(
+                        autoCompleteTextView1.getWindowToken(), 0);
+            }
+            if (this.autosave.getLocationToEntry() != null
+                    && this.autosave.getLocationToEntry().trim().length() > 0) {
+                getDestinationLocationDetails();
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(
+                        autoCompleteTextView2.getWindowToken(), 0);
+            }
+            System.out.println("Autosave Activity:"
+                    + this.autosave.getNaactivity());
+            if (!this.autosave.getNaactivity().equalsIgnoreCase(className)) {
+                System.out.println("Autosave Continue to ");
+                continueButton(null);
+            }
+            System.out
+                    .println("handleAutosave trying to restore from autosave:"
+                            + this.autosave.getCdlocat());
+        }
+        currentlyRestoringAutosave = false;
+    }
 
     public void continueButton(View view) {
         // For testing...
@@ -304,19 +415,94 @@ public class Pickup1 extends SenateActivity
                 boolean focusRequested = autoCompleteTextView2.requestFocus();
 
             } else if (Integer.valueOf(tvCount1.getText().toString()) < 1) {
-                Toast toast = Toast.makeText(this, "!!ERROR: Origin Location must have at least one item", duration);
+                Toast toast = Toast.makeText(this,
+                        "!!ERROR: Origin Location must have at least one item",
+                        duration);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
 
             } else {
                 btnPickup1Cont.getBackground().setAlpha(70);
+                System.out.println("AutoSaving....");
+                autoSaveNow();
                 Intent intent = new Intent(this, Pickup2Activity.class);
-                origin = new Location(originSummary);
-                destination = new Location(destinationSummary);
+                origin = locations.get(allLocations.indexOf(currentFromLocation));
+                destination = locations.get(allLocations.indexOf(currentToLocation));
                 intent.putExtra("origin", origin);
                 intent.putExtra("destination", destination);
                 startActivity(intent);
                 overridePendingTransition(R.anim.in_right, R.anim.out_left);
+            }
+        }
+    }
+
+    public void autoSaveNow() {
+
+        if (autosave == null) {
+            System.out.println("in autoSave");
+
+            try {
+                ContentValues values = new ContentValues();
+                values.put("naactivity", className);
+                values.put("nuxracttype", "2");
+                values.put("dttxnorigin",
+                        MenuActivity.invSaveDB.getNow());
+                values.put("natxnorguser", LoginActivity.nauser);
+                values.put("dttxnupdate",
+                        MenuActivity.invSaveDB.getNow());
+                values.put("natxnupduser", LoginActivity.nauser);
+
+                long rowid = MenuActivity.invSaveDB.insert(
+                        "AM12ACTIVITY", values);
+                nuxractivity = String.valueOf(rowid);
+                System.out.println("nuxractivity SET TO "
+                        + nuxractivity + " FROM " + rowid);
+
+                values = new ContentValues();
+                values.put("nuxractivity", rowid);
+                values.put("locationfromentry", this.autoCompleteTextView1
+                        .getText().toString());
+                values.put("cdlocatfrom", cdlocatfrom);
+                values.put("cdloctypefrom", cdloctypefrom);
+                values.put("cdrespctrhdfrom", cdrespctrhdfrom);
+                values.put("adstreet1from", adstreet1from);
+                values.put("adcityfrom", adcityfrom);
+                values.put("adstatefrom", adstatefrom);
+                values.put("adzipcodefrom", adzipcodefrom);
+                values.put("descriptfrom", descriptfrom);
+                values.put("locationtoentry", this.autoCompleteTextView2
+                        .getText().toString());
+                values.put("cdlocatto", cdlocatto);
+                values.put("cdloctypeto", cdloctypeto);
+                values.put("cdrespctrhdto", cdrespctrhdto);
+                values.put("adstreet1to", adstreet1to);
+                values.put("adcityto", adcityto);
+                values.put("adstateto", adstateto);
+                values.put("adzipcodeto", adzipcodeto);
+                values.put("descriptto", descriptto);
+                values.put("dttxnorigin", MenuActivity.invSaveDB.getNow());
+                values.put("natxnorguser", LoginActivity.nauser);
+                values.put("dttxnupdate", MenuActivity.invSaveDB.getNow());
+                values.put("natxnupduser", LoginActivity.nauser);
+                System.out.println("autosave locationfromentry:"
+                        + this.autoCompleteTextView1.getText().toString()
+                        + ", cdlocatfrom:" + cdlocatfrom + ", adstreet1from:"
+                        + adstreet1from + ", cdlocatto:" + cdlocatto
+                        + ", locationtoentry:"
+                        + this.autoCompleteTextView2.getText().toString()
+                        + ", adstreet1to:" + adstreet1to 
+                        );
+
+                long rowid2 = MenuActivity.invSaveDB.insert("Am12pickup",
+                        values);
+                nuxractivity = String.valueOf(rowid);
+                System.out.println("autosave nuxractivity SET TO "
+                        + nuxractivity + " FROM " + rowid + " NUXRPICKUPLOC:"
+                        + rowid2);
+
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
         }
     }
@@ -362,9 +548,10 @@ public class Pickup1 extends SenateActivity
         case FROMLOCATIONDETAILS_TIMEOUT:
             if (resultCode == RESULT_OK) {
                 if (fromLocationBeingTyped) {
-                    autoCompleteTextView1.setText(autoCompleteTextView1.getText());
-                    autoCompleteTextView1.setSelection(autoCompleteTextView1.getText()
-                            .length());
+                    autoCompleteTextView1.setText(autoCompleteTextView1
+                            .getText());
+                    autoCompleteTextView1.setSelection(autoCompleteTextView1
+                            .getText().length());
                 } else {
                     getOriginLocationDetails();
                     autoCompleteTextView2.requestFocus();
@@ -419,15 +606,10 @@ public class Pickup1 extends SenateActivity
                 startTimeout(LOCCODELIST_TIMEOUT);
             }
 
-            JSONArray jsonArray = new JSONArray(res); // TODO: ?? catch
-                                                      // exception/handle the
-                                                      // case where res is
-                                                      // invalid JSON ??
-            for (int i = 0; i < jsonArray.length(); i++) {
-                allLocations.add(jsonArray.getString(i));
+            locations = TransactionParser.parseMultipleLocations(res);
+            for (Location loc: locations) {
+                allLocations.add(loc.getLocationSummaryString());
             }
-
-            Collections.sort(allLocations);
         }
         return allLocations;
     }
@@ -459,22 +641,40 @@ public class Pickup1 extends SenateActivity
                     return;
                 }
                 try {
+                    cdlocatfrom = null;
+                    cdloctypefrom = null;
+                    cdrespctrhdfrom = null;
+                    adstreet1from = null;
+                    adcityfrom = null;
+                    adstatefrom = null;
+                    adzipcodefrom = null;
+                    nucountfrom = null;
+
+                    System.out.println("ORIGINAL res:" + res);
+
                     JSONObject object = (JSONObject) new JSONTokener(res)
                             .nextValue();
-                    tvOffice1.setText(object.getString("cdrespctrhd"));
+                    cdlocatfrom = object.getString("cdlocat");
+                    cdloctypefrom = object.getString("cdloctype");
+                    cdrespctrhdfrom = object.getString("cdrespctrhd");
+                    adstreet1from = object.getString("adstreet1").replaceAll(
+                            "&#34;", "\"");
+                    System.out.println("adstreet1from:"+adstreet1from);
+                    adcityfrom = object.getString("adcity").replaceAll("&#34;",
+                            "\"");
+                    adstatefrom = object.getString("adstate").replaceAll(
+                            "&#34;", "\"");
+                    adzipcodefrom = object.getString("adzipcode").replaceAll(
+                            "&#34;", "\"");
+                    nucountfrom = object.getString("nucount");
+
+                    tvOffice1.setText(cdrespctrhdfrom);
                     // tvLocCd1.setText( object.getString("cdlocat"));
-                    tvDescript1.setText(object.getString("adstreet1")
-                            .replaceAll("&#34;", "\"")
-                            + " ,"
-                            + object.getString("adcity").replaceAll("&#34;",
-                                    "\"")
-                            + ", "
-                            + object.getString("adstate").replaceAll("&#34;",
-                                    "\"")
-                            + " "
-                            + object.getString("adzipcode").replaceAll("&#34;",
-                                    "\""));
-                    tvCount1.setText(object.getString("nucount"));
+                    tvDescript1.setText(adstreet1from + " ," + adcityfrom
+                            + ", " + adstatefrom + " " + adzipcodefrom);
+                    descriptfrom =  tvDescript1.getText().toString();
+
+                    tvCount1.setText(nucountfrom);
 
                 } catch (JSONException e) {
                     tvOffice1.setText("!!ERROR: " + e.getMessage());
@@ -514,27 +714,45 @@ public class Pickup1 extends SenateActivity
                     noServerResponse();
                     return;
                 }
+
                 try {
+                    cdlocatto = null;
+                    cdloctypeto = null;
+                    cdrespctrhdto = null;
+                    adstreet1to = null;
+                    adcityto = null;
+                    adstateto = null;
+                    adzipcodeto = null;
+                    nucountto = null;
+                    System.out.println("DESTINATION res:" + res);
+
                     JSONObject object = (JSONObject) new JSONTokener(res)
                             .nextValue();
-                    tvOffice2.setText(object
-                            .getString("cdrespctrhd"));
+                    cdlocatto = object.getString("cdlocat");
+                    cdloctypeto = object.getString("cdloctype");
+                    cdrespctrhdto = object.getString("cdrespctrhd");
+                    adstreet1to = object.getString("adstreet1").replaceAll(
+                            "&#34;", "\"");
+                    System.out.println("adstreet1to:"+adstreet1to);
+                    
+                    adcityto = object.getString("adcity").replaceAll("&#34;",
+                            "\"");
+                    adstateto = object.getString("adstate").replaceAll("&#34;",
+                            "\"");
+                    adzipcodeto = object.getString("adzipcode").replaceAll(
+                            "&#34;", "\"");
+                    nucountto = object.getString("nucount");
+                    tvOffice2.setText(cdrespctrhdto);
                     // tvLocCd2.setText( object.getString("cdlocat"));
-                    tvDescript2.setText(object.getString("adstreet1")
-                            .replaceAll("&#34;", "\"")
-                            + " ,"
-                            + object.getString("adcity").replaceAll("&#34;",
-                                    "\"")
-                            + ", "
-                            + object.getString("adstate").replaceAll("&#34;",
-                                    "\"")
-                            + " "
-                            + object.getString("adzipcode").replaceAll("&#34;",
-                                    "\""));
-                    tvCount2.setText(object.getString("nucount"));
+                    tvDescript2.setText(adstreet1to + " ," + adcityto + ", "
+                            + adstateto + " " + adzipcodeto);
+                    descriptto =  tvDescript2.getText().toString();
+                    
+                    tvCount2.setText(nucountto);
 
                 } catch (JSONException e) {
                     tvDescript2.setText("!!ERROR: " + e.getMessage());
+                    descriptto =  tvDescript2.getText().toString();
                     tvOffice2.setText("Please contact STS/BAC.");
                     tvCount2.setText("N/A");
                     e.printStackTrace();
@@ -558,7 +776,7 @@ public class Pickup1 extends SenateActivity
                             int position, long id) {
                         Log.i("ItemClicked", "ITEM CLICKED");
                         if (autoCompleteTextView1.getText().toString().trim()
-                                .length()>0) {
+                                .length() > 0) {
                             getOriginLocationDetails();
                         }
                         if (autoCompleteTextView2.getText().toString().trim()
@@ -587,10 +805,10 @@ public class Pickup1 extends SenateActivity
                     public void onItemClick(AdapterView<?> parent, View view,
                             int position, long id) {
                         if (autoCompleteTextView2.getText().toString().trim()
-                                .length()>0) {
+                                .length() > 0) {
                             getDestinationLocationDetails();
                         }
-                        
+
                         int duration = Toast.LENGTH_SHORT;
                         toLocationBeingTyped = false;
                         if (autoCompleteTextView1.getText().toString().trim()
@@ -603,14 +821,14 @@ public class Pickup1 extends SenateActivity
                             toast.setGravity(Gravity.CENTER, 0, 0);
                             toast.show();
                         } else {
-                            if (autoCompleteTextView1.getText().toString().trim()
-                                    .length() > 0) {
+                            if (autoCompleteTextView1.getText().toString()
+                                    .trim().length() > 0) {
                                 if (autoCompleteTextView1.getText().toString()
                                         .trim().length() > 0) {
                                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                                     imm.hideSoftInputFromWindow(
-                                            autoCompleteTextView1.getWindowToken(),
-                                            0);
+                                            autoCompleteTextView1
+                                                    .getWindowToken(), 0);
                                 } else {
 
                                 }

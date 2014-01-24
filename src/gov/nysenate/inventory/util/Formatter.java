@@ -9,8 +9,10 @@ public class Formatter
 {
 
     /**
-     * @param parameterName Name of get request parameter associated with this array.
-     * @param values String array to convert into get request form.
+     * @param parameterName
+     *            Name of get request parameter associated with this array.
+     * @param values
+     *            String array to convert into get request form.
      * @return string array formatted for a get request. example:
      *         &parameterName=
      *         value1&parameterName=value2&parameterName=value3...
@@ -29,7 +31,8 @@ public class Formatter
         for (InvItem aValue : invItems) {
             nusenateStrings.add(aValue.getNusenate());
         }
-        String[] s = nusenateStrings.toArray(new String[nusenateStrings.size()]);
+        String[] s = nusenateStrings
+                .toArray(new String[nusenateStrings.size()]);
         return Formatter.generateGetArray(parameterName, s);
     }
 }

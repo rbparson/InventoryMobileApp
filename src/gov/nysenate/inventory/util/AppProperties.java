@@ -1,6 +1,5 @@
 package gov.nysenate.inventory.util;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -9,7 +8,8 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.widget.Toast;
 
-public class AppProperties {
+public class AppProperties
+{
 
     private static Properties props;
 
@@ -22,7 +22,9 @@ public class AppProperties {
                 is = assetMgr.open("invApp.properties");
                 props.load(is);
             } catch (IOException e) {
-                Toasty.displayCenteredMessage(context, "!!ERROR: Exception loading properties.", Toast.LENGTH_SHORT);
+                Toasty.displayCenteredMessage(context,
+                        "!!ERROR: Exception loading properties.",
+                        Toast.LENGTH_SHORT);
             }
         }
         return props;

@@ -52,7 +52,10 @@ import android.widget.Toast;
 
 public class EditPickup1Activity extends SenateActivity
 {
-    public enum SearchByParam {PICKUPLOC, DELIVERYLOC, NAPICKUPBY, DATE};
+    public enum SearchByParam {
+        PICKUPLOC, DELIVERYLOC, NAPICKUPBY, DATE
+    };
+
     private SearchByParam currentSearchParam = SearchByParam.PICKUPLOC;
     private Spinner searchParam;
     public static ClearableAutoCompleteTextView searchText;
@@ -83,28 +86,29 @@ public class EditPickup1Activity extends SenateActivity
         searchText = (ClearableAutoCompleteTextView) findViewById(R.id.acSearchBy);
         searchParam = (Spinner) findViewById(R.id.spinSearchByList);
 
-        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line);
+        adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_dropdown_item_1line);
         searchText.setThreshold(1);
         searchText.addTextChangedListener(filterTextWatcher);
         searchText.setAdapter(adapter);
 
         searchText.setOnItemClickListener(new AdapterView.OnItemClickListener()
-                {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view,
-                            int position, long id) {
-                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                        imm.hideSoftInputFromWindow(
-                                searchText.getWindowToken(), 0);
-                        searchText.setSelection(0);
-                        // locationBeingTyped = false;
-                    }
-                });
+        {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view,
+                    int position, long id) {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
+                searchText.setSelection(0);
+                // locationBeingTyped = false;
+            }
+        });
 
         currentSearchParam = SearchByParam.PICKUPLOC;
         if (checkServerResponse(true) == OK) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                new GetAllPickups().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new GetAllPickups()
+                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             } else {
                 new GetAllPickups().execute();
             }
@@ -119,7 +123,6 @@ public class EditPickup1Activity extends SenateActivity
         btnEditPickup1Cancel = (Button) findViewById(R.id.btnEditPickup1Cancel);
         btnEditPickup1Cancel.getBackground().setAlpha(255);
     }
-
 
     @Override
     public void startTimeout(int timeoutType) {
@@ -189,7 +192,7 @@ public class EditPickup1Activity extends SenateActivity
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count,
                 int after) {
-        	textLengthBeforeChange = searchText.getText().length();
+            textLengthBeforeChange = searchText.getText().length();
         }
 
         @Override
@@ -197,9 +200,9 @@ public class EditPickup1Activity extends SenateActivity
             // locationBeingTyped = true;
             int textLength = searchText.getText().length();
             if (textLength == 0 || textLength < textLengthBeforeChange) {
-            	label1Value.setText("N/A");
-            	if (!currentSearchParam.toString().equals("DATE"))
-            		label2Value.setText("N/A");
+                label1Value.setText("N/A");
+                if (!currentSearchParam.toString().equals("DATE"))
+                    label2Value.setText("N/A");
             }
             if (textLength >= 3 && textLength > textLengthBeforeChange) {
                 String loccode;
@@ -210,7 +213,8 @@ public class EditPickup1Activity extends SenateActivity
                 case PICKUPLOC:
                     loccode = text.split("-")[0];
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                        new LocationDetails(loccode).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        new LocationDetails(loccode)
+                                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                     } else {
                         new LocationDetails(loccode).execute();
                     }
@@ -220,7 +224,8 @@ public class EditPickup1Activity extends SenateActivity
                 case DELIVERYLOC:
                     loccode = text.split("-")[0];
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                        new LocationDetails(loccode).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        new LocationDetails(loccode)
+                                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                     } else {
                         new LocationDetails(loccode).execute();
                     }
@@ -229,7 +234,8 @@ public class EditPickup1Activity extends SenateActivity
 
                 case NAPICKUPBY:
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                        new EmployeePickupInfo().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        new EmployeePickupInfo()
+                                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                     } else {
                         new EmployeePickupInfo().execute();
                     }
@@ -256,24 +262,26 @@ public class EditPickup1Activity extends SenateActivity
                 .setMessage(
                         Html.fromHtml("!!ERROR: There was <font color='RED'><b>NO SERVER RESPONSE</b></font>. <br/> Please contact STS/BAC."))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
 
-                        CharSequence text = "No action taken due to NO SERVER RESPONSE";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "No action taken due to NO SERVER RESPONSE";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
@@ -291,13 +299,13 @@ public class EditPickup1Activity extends SenateActivity
         intent.putExtra("searchParam", searchParam.getSelectedItem().toString());
         intent.putExtra("searchText", searchText.getText().toString());
         ArrayList<String> json = new ArrayList<String>();
-        for (Transaction tran: validPickups) {
+        for (Transaction tran : validPickups) {
             json.add(tran.toJson());
         }
         intent.putStringArrayListExtra("pickups", json);
         startActivity(intent);
         overridePendingTransition(R.anim.in_right, R.anim.out_left);
-            
+
     }
 
     public void cancelButton(View view) {
@@ -313,7 +321,8 @@ public class EditPickup1Activity extends SenateActivity
         return true;
     }
 
-    private class GetAllPickups extends AsyncTask<Void, Void, Integer> {
+    private class GetAllPickups extends AsyncTask<Void, Void, Integer>
+    {
 
         @Override
         protected void onPreExecute() {
@@ -333,7 +342,8 @@ public class EditPickup1Activity extends SenateActivity
             try {
                 response = httpClient.execute(new HttpGet(url));
                 response.getEntity().writeTo(out);
-                validPickups = TransactionParser.parseMultiplePickups(out.toString());
+                validPickups = TransactionParser.parseMultiplePickups(out
+                        .toString());
             } catch (ClientProtocolException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -347,23 +357,33 @@ public class EditPickup1Activity extends SenateActivity
         protected void onPostExecute(Integer response) {
             progressBar.setVisibility(ProgressBar.INVISIBLE);
             updateGUI(searchParam.getSelectedItem().toString());
-            searchParam.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                    searchText.setText("");
-                    updateGUI(searchParam.getSelectedItem().toString());
-                }
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {
-                }
-            });
+            searchParam
+                    .setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
+                    {
+                        @Override
+                        public void onItemSelected(AdapterView<?> parent,
+                                View view, int pos, long id) {
+                            searchText.setText("");
+                            updateGUI(searchParam.getSelectedItem().toString());
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {
+                        }
+                    });
 
             if (response == HttpStatus.SC_OK) {
                 return;
             } else if (response == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-                Toasty.displayCenteredMessage(EditPickup1Activity.this, "!!ERROR: Database Error while trying to get pickup info.", Toast.LENGTH_SHORT);
+                Toasty.displayCenteredMessage(
+                        EditPickup1Activity.this,
+                        "!!ERROR: Database Error while trying to get pickup info.",
+                        Toast.LENGTH_SHORT);
             } else {
-                Toasty.displayCenteredMessage(EditPickup1Activity.this, "!!ERROR: Unknown Error occured pickup data may be inaccurate.", Toast.LENGTH_SHORT);
+                Toasty.displayCenteredMessage(
+                        EditPickup1Activity.this,
+                        "!!ERROR: Unknown Error occured pickup data may be inaccurate.",
+                        Toast.LENGTH_SHORT);
             }
         }
     }
@@ -406,7 +426,9 @@ public class EditPickup1Activity extends SenateActivity
         updateAdapter(dates);
     }
 
-    private class LocationDetails extends AsyncTask<Void, Map<TextView, String>, String> {
+    private class LocationDetails extends
+            AsyncTask<Void, Map<TextView, String>, String>
+    {
 
         private String loccode;
 
@@ -448,7 +470,8 @@ public class EditPickup1Activity extends SenateActivity
             String city = "";
             String zip = "";
             try {
-                JSONObject json = (JSONObject) new JSONTokener(out.toString()).nextValue();
+                JSONObject json = (JSONObject) new JSONTokener(out.toString())
+                        .nextValue();
                 // newLocation.setCdlocat(json.getString("cdlocat"));
                 respctrhd = json.getString("cdrespctrhd");
                 adstreet1 = json.getString("adstreet1");
@@ -479,7 +502,9 @@ public class EditPickup1Activity extends SenateActivity
         }
     }
 
-    private class EmployeePickupInfo extends AsyncTask<Void, Map<TextView, String>, Integer> {
+    private class EmployeePickupInfo extends
+            AsyncTask<Void, Map<TextView, String>, Integer>
+    {
 
         @Override
         protected void onPreExecute() {
@@ -513,7 +538,8 @@ public class EditPickup1Activity extends SenateActivity
             String nalast = "";
             String respctrhd = "";
             try {
-                JSONObject json = (JSONObject) new JSONTokener(out.toString()).nextValue();
+                JSONObject json = (JSONObject) new JSONTokener(out.toString())
+                        .nextValue();
                 nafirst = json.getString("nafirst");
                 nalast = json.getString("nalast");
                 respctrhd = json.getString("cdrespctrhd");

@@ -21,6 +21,7 @@ import org.json.JSONTokener;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -57,10 +58,20 @@ public class Verification extends SenateActivity
     public String status = null;
     public String loc_code_str = null;
     public String cdloctype = null;
+    public String cdlocat = null;
+    public String cdrespctrhd = null;
+    public String adstreet1 = null;
+    public String adcity = null;
+    public String adstate = null;
+    public String adzipcode = null;
+    public String descript = null;
     static ClearableAutoCompleteTextView autoCompleteTextView1;
     public ArrayList<String> locCodeList = new ArrayList<String>();
     static Button btnVerify1Cont;
     static Button btnVerify1Cancel;
+    static String nuxractivity = "";
+    ArrayAdapter<String> adapterLocation;
+
     // TextView tvLocCd;
     TextView tvDescript;
     TextView tvCount;
@@ -69,6 +80,7 @@ public class Verification extends SenateActivity
     String timeoutFrom = "verification";
     boolean locationBeingTyped = false;
     int lastSize = 0;
+    String className = this.getClass().getSimpleName();
 
     public final int LOCCODELIST_TIMEOUT = 101, LOCATIONDETAILS_TIMEOUT = 102;
 
@@ -82,6 +94,18 @@ public class Verification extends SenateActivity
         setContentView(R.layout.activity_verification);
         registerBaseActivityReceiver();
         currentActivity = this;
+        System.out.println("CLASSNAME:" + className);
+
+        try {
+            autosave = getIntent().getParcelableExtra("autosave");
+            if (autosave != null) {
+                System.out.println("****VERIFICATION: TRYING TO RESTORE....");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            autosave = null;
+            System.out.println("****VERIFICATION: NOTHING TO RESTORE.");
+        }
 
         loc_code = (EditText) findViewById(R.id.preferencePWD);
         // code for the autocomplete arraylist of location
@@ -113,25 +137,27 @@ public class Verification extends SenateActivity
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view,
                             int position, long id) {
-                        int duration = Toast.LENGTH_SHORT;
                         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                         imm.hideSoftInputFromWindow(
                                 autoCompleteTextView1.getWindowToken(), 0);
-                        //Log.i("autocomplete clicked", "Before selection");
-                        //autoCompleteTextView1.setSelection(0);
+                        // Log.i("autocomplete clicked", "Before selection");
+                        // autoCompleteTextView1.setSelection(0);
                         Log.i("autocomplete clicked",
                                 "Before getLocationDetails");
                         if (autoCompleteTextView1.getText().toString().trim()
                                 .length() > 0) {
                             getLocationDetails();
                         }
-                        /*Log.i("autocomplete clicked",
-                                "After getLocationDetails");*/
+                        /*
+                         * Log.i("autocomplete clicked",
+                         * "After getLocationDetails");
+                         */
                         locationBeingTyped = false;
                     }
                 });
 
         loc_details = (TextView) findViewById(R.id.textView2);
+        handleAutosave();
     }
 
     @Override
@@ -161,30 +187,78 @@ public class Verification extends SenateActivity
                 .setMessage(
                         Html.fromHtml("!!ERROR: There was <font color='RED'><b>NO SERVER RESPONSE</b></font>. <br/> Please contact STS/BAC."))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
 
-                        CharSequence text = "No action taken due to NO SERVER RESPONSE";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "No action taken due to NO SERVER RESPONSE";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
 
         // show it
         alertDialog.show();
+    }
+
+    public void handleAutosave() {
+        System.out.println("called handleAutosave");
+        if (this.autosave != null) {
+            currentlyRestoringAutosave = true;
+            System.out
+                    .println("handleAutosave trying to restore from autosave:"
+                            + this.autosave.getLocationEntry());
+            nuxractivity = String.valueOf(this.autosave.getNuxractivity());
+            this.autoCompleteTextView1.setAdapter(null);
+            autoCompleteTextView1.setText(this.autosave.getLocationEntry());
+            this.tvDescript.setText(this.autosave.getDescript());
+            System.out
+                    .println("handleAutosave trying to restore from autosave:"
+                            + this.autosave.getDescript());
+            this.tvOffice.setText(this.autosave.getCdrespctrhd());
+            System.out
+                    .println("handleAutosave trying to restore from autosave:"
+                            + this.autosave.getCdrespctrhd());
+            cdlocat = this.autosave.getCdlocat();
+            cdloctype = this.autosave.getCdloctype();
+            cdrespctrhd = this.autosave.getCdrespctrhd();
+            adstreet1 = this.autosave.getAdstreet1();
+            adcity = this.autosave.getAdcity();
+            adstate = this.autosave.getAdstate();
+            adzipcode = this.autosave.getAdzipcode();
+            if (this.autosave.getLocationEntry() != null
+                    && this.autosave.getLocationEntry().trim().length() > 0) {
+                this.autoCompleteTextView1.setAdapter(this.adapterLocation);
+                getLocationDetails();
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(
+                        autoCompleteTextView1.getWindowToken(), 0);
+            }
+            System.out.println("Autosave Activity:"
+                    + this.autosave.getNaactivity());
+            if (!this.autosave.getNaactivity().equalsIgnoreCase(className)) {
+                System.out.println("Autosave Continue to ");
+                continueButton(null);
+            }
+            System.out
+                    .println("handleAutosave trying to restore from autosave:"
+                            + this.autosave.getCdlocat());
+        }
+        currentlyRestoringAutosave = false;
     }
 
     private TextWatcher filterTextWatcher = new TextWatcher()
@@ -198,21 +272,23 @@ public class Verification extends SenateActivity
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count,
                 int after) {
-            lastSize = autoCompleteTextView1.getText().toString().trim().length();
+            lastSize = autoCompleteTextView1.getText().toString().trim()
+                    .length();
         }
 
         @Override
         public void afterTextChanged(Editable s) {
             locationBeingTyped = true;
-            int currentSize =  autoCompleteTextView1.getText().toString().trim().length();
-            /* Log.i("autocomplete", "autocomplete list count:"
-                    + autoCompleteTextView1.getAdapter().getCount());
-           if (autoCompleteTextView1.getAdapter().getCount() == 1) {
-                autoCompleteTextView1.setSelection(0);
-                if (autoCompleteTextView1.getText().toString().trim().length() > 0) {
-                    getLocationDetails();
-                }
-            }*/
+            int currentSize = autoCompleteTextView1.getText().toString().trim()
+                    .length();
+            /*
+             * Log.i("autocomplete", "autocomplete list count:" +
+             * autoCompleteTextView1.getAdapter().getCount()); if
+             * (autoCompleteTextView1.getAdapter().getCount() == 1) {
+             * autoCompleteTextView1.setSelection(0); if
+             * (autoCompleteTextView1.getText().toString().trim().length() > 0)
+             * { getLocationDetails(); } }
+             */
             if (currentSize == 0 || currentSize < lastSize) {
                 clearLocationDetails();
             }
@@ -315,6 +391,7 @@ public class Verification extends SenateActivity
         loc_code_str = barcodeNumberDetails[0];// this will be passed to
                                                // next activity with
                                                // intent
+        cdlocat = loc_code_str;
         String[] nextSplit = null;
         if (barcodeNumberDetails.length > 1) {
             nextSplit = barcodeNumberDetails[1].split(":");
@@ -368,24 +445,23 @@ public class Verification extends SenateActivity
                     JSONObject object = (JSONObject) new JSONTokener(res)
                             .nextValue();
                     // tvLocCd.setText( object.getString("cdlocat"));
-                    String cdrespcrthd = object.getString("cdrespctrhd");
-                    if (cdrespcrthd == null || cdrespcrthd.trim().length() == 0
-                            || cdrespcrthd.equals("~")) {
+                    cdrespctrhd = object.getString("cdrespctrhd");
+                    if (cdrespctrhd == null || cdrespctrhd.trim().length() == 0
+                            || cdrespctrhd.equals("~")) {
                         tvOffice.setText("N/A");
                     } else {
                         tvOffice.setText(object.getString("cdrespctrhd"));
                     }
-                    String descript = object.getString("adstreet1").replaceAll(
-                            "&#34;", "\"")
-                            + " ,"
-                            + object.getString("adcity").replaceAll("&#34;",
-                                    "\"")
-                            + ", "
-                            + object.getString("adstate").replaceAll("&#34;",
-                                    "\"")
-                            + " "
-                            + object.getString("adzipcode").replaceAll("&#34;",
-                                    "\"");
+                    adstreet1 = object.getString("adstreet1").replaceAll(
+                            "&#34;", "\"");
+                    adcity = object.getString("adcity").replaceAll("&#34;",
+                            "\"");
+                    adstate = object.getString("adstate").replaceAll("&#34;",
+                            "\"");
+                    adzipcode = object.getString("adzipcode").replaceAll(
+                            "&#34;", "\"");
+                    descript = adstreet1 + " ," + adcity + ", " + adstate + " "
+                            + adzipcode;
                     if (descript == null || descript.trim().length() == 0
                             || descript.equals("~")
                             || descript.trim().equals(",,")) {
@@ -465,13 +541,13 @@ public class Verification extends SenateActivity
                 // System.out.println("**********LOCATION CODES COUNT:"
                 // + locCodeList.size());
                 //
-                ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                adapterLocation = new ArrayAdapter<String>(this,
                         android.R.layout.simple_dropdown_item_1line,
                         locCodeList);
 
                 autoCompleteTextView1 = (ClearableAutoCompleteTextView) findViewById(R.id.autoCompleteTextView1);
                 autoCompleteTextView1.setThreshold(1);
-                autoCompleteTextView1.setAdapter(adapter);
+                autoCompleteTextView1.setAdapter(adapterLocation);
 
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
@@ -502,7 +578,7 @@ public class Verification extends SenateActivity
                         "!!ERROR: You must first pick a location.", duration);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
-                boolean focusRequested = autoCompleteTextView1.requestFocus();
+                autoCompleteTextView1.requestFocus();
                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.toggleSoftInput(0, InputMethodManager.SHOW_IMPLICIT);
 
@@ -512,17 +588,71 @@ public class Verification extends SenateActivity
                                 + "\" is invalid.", duration);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
-                boolean focusRequested = autoCompleteTextView1.requestFocus();
+                autoCompleteTextView1.requestFocus();
                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.toggleSoftInput(0, InputMethodManager.SHOW_IMPLICIT);
 
             } else {
+                System.out.println("INSERT MASTER VERIFICATION RECORD");
 
                 progBarVerify.setVisibility(View.VISIBLE);
+                if (autosave == null) {
+                    try {
+                        ContentValues values = new ContentValues();
+                        values.put("naactivity", className);
+                        values.put("nuxracttype", "1");
+                        values.put("dttxnorigin",
+                                MenuActivity.invSaveDB.getNow());
+                        values.put("natxnorguser", LoginActivity.nauser);
+                        values.put("dttxnupdate",
+                                MenuActivity.invSaveDB.getNow());
+                        values.put("natxnupduser", LoginActivity.nauser);
+
+                        long rowid = MenuActivity.invSaveDB.insert(
+                                "AM12ACTIVITY", values);
+                        nuxractivity = String.valueOf(rowid);
+                        System.out.println("nuxractivity SET TO "
+                                + nuxractivity + " FROM " + rowid);
+
+                        values = new ContentValues();
+                        values.put("nuxractivity", rowid);
+                        values.put("locationentry", this.autoCompleteTextView1
+                                .getText().toString());
+                        values.put("cdlocat", cdlocat);
+                        values.put("cdloctype", cdloctype);
+                        values.put("cdrespctrhd", cdrespctrhd);
+                        values.put("adstreet1", adstreet1);
+                        values.put("adcity", adcity);
+                        values.put("adstate", adstate);
+                        values.put("adzipcode", adzipcode);
+                        values.put("descript", descript);
+                        values.put("dttxnorigin",
+                                MenuActivity.invSaveDB.getNow());
+                        values.put("natxnorguser", LoginActivity.nauser);
+                        values.put("dttxnupdate",
+                                MenuActivity.invSaveDB.getNow());
+                        values.put("natxnupduser", LoginActivity.nauser);
+
+                        long rowid2 = MenuActivity.invSaveDB.insert(
+                                "AM12VERIFY", values);
+                        nuxractivity = String.valueOf(rowid);
+                        System.out.println("nuxractivity SET TO "
+                                + nuxractivity + " FROM " + rowid
+                                + " NUXRVERIFYLOC:" + rowid2);
+
+                    } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+
                 btnVerify1Cont.getBackground().setAlpha(45);
                 Intent intent = new Intent(this, VerScanActivity.class);
                 intent.putExtra(loc_code_intent, loc_code_str);
                 intent.putExtra(cdloctype_intent, cdloctype);
+                if (autosave != null) {
+                    intent.putExtra("autosave", autosave);
+                }
                 startActivity(intent);
                 overridePendingTransition(R.anim.in_right, R.anim.out_left);
             }

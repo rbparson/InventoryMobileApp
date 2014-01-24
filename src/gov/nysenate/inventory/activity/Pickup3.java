@@ -6,6 +6,7 @@ import gov.nysenate.inventory.android.ClearableAutoCompleteTextView;
 import gov.nysenate.inventory.android.ClearableEditText;
 import gov.nysenate.inventory.android.R;
 import gov.nysenate.inventory.android.SignatureView;
+import gov.nysenate.inventory.model.AutoSaveItem;
 import gov.nysenate.inventory.model.Employee;
 import gov.nysenate.inventory.model.InvItem;
 import gov.nysenate.inventory.model.Transaction;
@@ -20,6 +21,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -46,9 +48,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -70,6 +74,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -95,7 +100,8 @@ public class Pickup3 extends SenateActivity
     static Button continueBtn;
     static Button cancelBtn;
     static Button btnPickup3ClrSig;
-
+    String className = this.getClass().getSimpleName();
+    
     private TextView pickupCountTV;
     private TextView tvOriginPickup3;
     private TextView tvDestinationPickup3;
@@ -116,6 +122,18 @@ public class Pickup3 extends SenateActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pickup3);
         registerBaseActivityReceiver();
+        
+        try {
+            autosave = getIntent().getParcelableExtra("autosave");
+            if (autosave != null) {
+                System.out
+                        .println("****PICKUP3: TRYING TO RESTORE....");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            autosave = null;
+            System.out.println("****PICKUP3: NOTHING TO RESTORE.");
+        }
 
         sign = (SignatureView) findViewById(R.id.blsignImageView);
         sign.setMinDimensions(200, 100);
@@ -123,10 +141,27 @@ public class Pickup3 extends SenateActivity
         commentsEditText
                 .setClearMsg("Do you want to clear the Pickup Comments?");
         commentsEditText.showClearMsg(true);
+        
+        try {
+            ContentValues values = new ContentValues();
+            values.put("naactivity", className);
+            values.put("nuxractivity", Pickup1.nuxractivity);
+            values.put("dttxnupdate", MenuActivity.invSaveDB.getNow());
+            values.put("natxnupduser", LoginActivity.nauser);
+
+            long rowcnt = MenuActivity.invSaveDB.update("AM12ACTIVITY", values,
+                    "nuxractivity = ?",
+                    new String[] { Pickup1.nuxractivity });
+           System.out.println ("ROWS UPDATED:"+rowcnt+" FOR NUXRACTIVITY:"+Pickup1.nuxractivity);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }        
 
         ListView ListViewTab1 = (ListView) findViewById(R.id.listView1);
 
-        pickup = TransactionParser.parseTransaction(getIntent().getStringExtra("pickup"));
+        pickup = TransactionParser.parseTransaction(getIntent().getStringExtra(
+                "pickup"));
         pickup.setNapickupby(LoginActivity.nauser);
 
         scannedBarcodeNumbers = pickup.getPickupItems();
@@ -142,9 +177,13 @@ public class Pickup3 extends SenateActivity
         remoteShipType.setVisibility(Spinner.INVISIBLE);
 
         // Display a "hint" in the spinner.
-        ArrayAdapter<CharSequence> spinAdapter = ArrayAdapter.createFromResource(this, R.array.remote_ship_types, android.R.layout.simple_spinner_item);
-        spinAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        remoteShipType.setAdapter(new NothingSelectedSpinnerAdapter(spinAdapter, R.layout.spinner_nothing_selected, this));
+        ArrayAdapter<CharSequence> spinAdapter = ArrayAdapter
+                .createFromResource(this, R.array.remote_ship_types,
+                        android.R.layout.simple_spinner_item);
+        spinAdapter
+                .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        remoteShipType.setAdapter(new NothingSelectedSpinnerAdapter(
+                spinAdapter, R.layout.spinner_nothing_selected, this));
 
         Adapter listAdapter1 = new InvListViewAdapter(this,
                 R.layout.invlist_item, scannedBarcodeNumbers);
@@ -346,7 +385,9 @@ public class Pickup3 extends SenateActivity
 
             if (isRemoteOptionVisible()) {
                 if (remoteShipType.getSelectedItem() == null) {
-                    Toasty.displayCenteredMessage(this, "You must pick a remote shipping option.", Toast.LENGTH_SHORT);
+                    Toasty.displayCenteredMessage(this,
+                            "You must pick a remote shipping option.",
+                            Toast.LENGTH_SHORT);
                     return;
                 }
             }
@@ -456,7 +497,42 @@ public class Pickup3 extends SenateActivity
 
         }
     }
+    
+    public void storeSignatureInBytes() {
+        // Scale the Image
+        ByteArrayOutputStream bs = new ByteArrayOutputStream();
+        Bitmap bitmap = sign.getImage();
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, 200, 40,
+                true);
 
+        // Workaround to set background to White...
+        // Issue was with oracle reports when the image is saved. 
+        // Transparent or black backgrounds show up as black but we
+        // really want white.
+        
+        for (int x = 0; x < scaledBitmap.getWidth(); x++) {
+            for (int y = 0; y < scaledBitmap.getHeight(); y++) {
+                String strColor = String.format("#%06X",
+                        0xFFFFFF & scaledBitmap.getPixel(x, y));
+                if (strColor.equals("#000000")
+                        || scaledBitmap.getPixel(x, y) == Color.TRANSPARENT) {
+                    scaledBitmap.setPixel(x, y, Color.WHITE);
+                }
+            }
+        }
+        // Compress Image
+        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 90, bs);
+
+        // Set the Background to White... Note: this did not seem to work so the workaround
+        // above was done. This has been kept just in case there are situations where this
+        // will work.
+        
+        scaledBitmap = setBackgroundColor(scaledBitmap, Color.WHITE);
+        
+        // Store Image in Byte Array Variable.
+        
+        imageInByte = bs.toByteArray();
+    }
 
     public void backButton(View view) {
         if (checkServerResponse(true) == OK) {
@@ -509,7 +585,7 @@ public class Pickup3 extends SenateActivity
 
         return returnArray;
     }
-
+    
     public Bitmap setBackgroundColor(Bitmap image, int backgroundColor) {
         Bitmap newBitmap = Bitmap.createBitmap(image.getWidth(),
                 image.getHeight(), image.getConfig());
@@ -567,7 +643,7 @@ public class Pickup3 extends SenateActivity
                 return "!!ERROR: Invalid requestTypeTask:"
                         + pickupRequestTaskType;
             }
-            
+
         }
     }
 
@@ -599,15 +675,12 @@ public class Pickup3 extends SenateActivity
 
         // call the servlet image upload and return the nuxrsign
 
-        String URL = LoginActivity.properties.get("WEBAPP_BASE_URL")
-                .toString();
+        String URL = LoginActivity.properties.get("WEBAPP_BASE_URL").toString();
 
-        new ProcessPickupTask().execute(
-                URL + "/ImgUpload?nauser=" + LoginActivity.nauser
-                + "&nuxrefem=" + nuxrefem
-                , URL + "/Pickup?");
+        new ProcessPickupTask().execute(URL + "/ImgUpload?nauser="
+                + LoginActivity.nauser + "&nuxrefem=" + nuxrefem, URL
+                + "/Pickup?");
     }
-
 
     public void returnToMoveMenu() {
         Intent intent = new Intent(this, Move.class);
@@ -667,10 +740,11 @@ public class Pickup3 extends SenateActivity
     }
 
     public void getEmployeeList() {
-            new GetEmployeeListTask().execute();
+        new GetEmployeeListTask().execute();
     }
 
-    private class ProcessPickupTask extends AsyncTask<String, Void, String> {
+    private class ProcessPickupTask extends AsyncTask<String, Void, String>
+    {
 
         @Override
         protected void onPreExecute() {
@@ -679,30 +753,9 @@ public class Pickup3 extends SenateActivity
 
         @Override
         protected String doInBackground(String... uri) {
-            // Scale the Image
-
             String NUXRRELSIGN = "";
-
-            ByteArrayOutputStream bs = new ByteArrayOutputStream();
-            Bitmap bitmap = sign.getImage();
-            Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, 200,
-                    40, true);
-
-            for (int x = 0; x < scaledBitmap.getWidth(); x++) {
-                for (int y = 0; y < scaledBitmap.getHeight(); y++) {
-                    String strColor = String.format("#%06X",
-                            0xFFFFFF & scaledBitmap.getPixel(x, y));
-                    if (strColor.equals("#000000")
-                            || scaledBitmap.getPixel(x, y) == Color.TRANSPARENT) {
-                        // System.out.println("********"+x+" x "+y+" SETTING COLOR TO WHITE");
-                        scaledBitmap.setPixel(x, y, Color.WHITE);
-                    }
-                }
-            }
-            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 90, bs);
-
-            scaledBitmap = setBackgroundColor(scaledBitmap, Color.WHITE);
-            imageInByte = bs.toByteArray();
+            Pickup3.this.storeSignatureInBytes();
+            Pickup3.this.autoSaveSignature();
             String responseString = "";
             try {
                 // Post the Image to the Web Server
@@ -746,14 +799,13 @@ public class Pickup3 extends SenateActivity
                  * // Set content type to PNG
                  * conn.setRequestProperty("Content-Type", "image/jpg");
                  * OutputStream outputStream = conn.getOutputStream();
-                 * OutputStream out = outputStream; // Write out the bytes
-                 * of the content string to the stream.
-                 * out.write(imageInByte); out.flush(); out.close(); // Read
-                 * response from the input stream. BufferedReader in = new
-                 * BufferedReader( new
-                 * InputStreamReader(conn.getInputStream())); String temp;
-                 * while ((temp = in.readLine()) != null) { responseString
-                 * += temp + "\n"; } temp = null; in.close();
+                 * OutputStream out = outputStream; // Write out the bytes of
+                 * the content string to the stream. out.write(imageInByte);
+                 * out.flush(); out.close(); // Read response from the input
+                 * stream. BufferedReader in = new BufferedReader( new
+                 * InputStreamReader(conn.getInputStream())); String temp; while
+                 * ((temp = in.readLine()) != null) { responseString += temp +
+                 * "\n"; } temp = null; in.close();
                  */
 
                 // Get Server Response to the posted Image
@@ -761,8 +813,8 @@ public class Pickup3 extends SenateActivity
                 HttpResponse response = httpClient.execute(httpPost,
                         localContext);
                 BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(response.getEntity()
-                                .getContent(), "UTF-8"));
+                        new InputStreamReader(
+                                response.getEntity().getContent(), "UTF-8"));
                 responseString = reader.readLine();
                 System.out.println("***Image Server response:\n'"
                         + responseString + "'");
@@ -840,7 +892,8 @@ public class Pickup3 extends SenateActivity
                 return;
             } else if (res.startsWith("***WARNING:")
                     || res.startsWith("!!ERROR:")) {
-                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(Pickup3.this);
+                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                        Pickup3.this);
 
                 // set title
                 alertDialogBuilder.setTitle(Html
@@ -849,16 +902,15 @@ public class Pickup3 extends SenateActivity
 
                 // set dialog message
                 alertDialogBuilder
-                .setMessage(
-                        Html.fromHtml(res.trim()
-                                + "<br/> Continue (Y/N)?"))
-                                .setCancelable(false)
-                                .setPositiveButton(Html.fromHtml("<b>Yes</b>"),
-                                        new DialogInterface.OnClickListener()
+                        .setMessage(
+                                Html.fromHtml(res.trim()
+                                        + "<br/> Continue (Y/N)?"))
+                        .setCancelable(false)
+                        .setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                                new DialogInterface.OnClickListener()
                                 {
                                     @Override
-                                    public void onClick(
-                                            DialogInterface dialog,
+                                    public void onClick(DialogInterface dialog,
                                             int id) {
                                         // if this button is clicked,
                                         // just close
@@ -867,12 +919,11 @@ public class Pickup3 extends SenateActivity
                                         dialog.dismiss();
                                     }
                                 })
-                                .setPositiveButton(Html.fromHtml("<b>No</b>"),
-                                        new DialogInterface.OnClickListener()
+                        .setPositiveButton(Html.fromHtml("<b>No</b>"),
+                                new DialogInterface.OnClickListener()
                                 {
                                     @Override
-                                    public void onClick(
-                                            DialogInterface dialog,
+                                    public void onClick(DialogInterface dialog,
                                             int id) {
                                         // if this button is clicked,
                                         // just close
@@ -888,7 +939,7 @@ public class Pickup3 extends SenateActivity
                 alertDialog.show();
             }
 
-            // Display Toster
+            // Display Toaster
             Context context = getApplicationContext();
             CharSequence text = res.trim();
             if (res.length() == 0) {
@@ -906,8 +957,97 @@ public class Pickup3 extends SenateActivity
             returnToMoveMenu();
         }
     }
+    
+    public void autoSaveSignature() {
+        try {
+            ContentValues values = new ContentValues();
+            values.put("naactivity", className);
+            values.put("blsign", this.imageInByte);
+            values.put("dttxnupdate", MenuActivity.invSaveDB.getNow());
+            values.put("natxnupduser", LoginActivity.nauser);
 
-    private class GetEmployeeListTask extends AsyncTask<Void, Void, String> {
+            long rowcnt = MenuActivity.invSaveDB.update("AM12PICKUP", values,
+                    "nuxractivity = ?",
+                    new String[] { Pickup1.nuxractivity });
+
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    public void autoSaveNow() {
+        try {
+            ContentValues values = new ContentValues();
+            values.put("naactivity", className);
+            values.put("cdremote", this.remoteBox.isChecked());
+            values.put("cdremoteshiptype", this.remoteShipType.getSelectedItem().toString());
+            values.put("cdpaperworkrequest", this.paperworkBox.isChecked());
+            values.put("blsign", this.imageInByte);
+            values.put("dttxnupdate", MenuActivity.invSaveDB.getNow());
+            values.put("natxnupduser", LoginActivity.nauser);
+
+            long rowcnt = MenuActivity.invSaveDB.update("AM12PICKUP", values,
+                    "nuxractivity = ?",
+                    new String[] { Pickup1.nuxractivity });
+
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+    
+    public void handleAutosave() {
+        if (this.autosave != null) {
+            currentlyRestoringAutosave = true;
+            restoreFromAutoSave();
+        }
+        currentlyRestoringAutosave = false;
+    }  
+    
+    public void restoreFromAutoSave() {
+        Cursor cursor = MenuActivity.invSaveDB
+                .rawQuery(
+                          " SELECT a.blsign, a.naactivity, a.nuxracttype, a.dttxnorigin, a.dttxnupdate, b.deacttype, c.cdlocat, c.cdloctype, c.cdrespctrhd, c.adstreet1, c.adcity, c.adstate, c.adzipcode, c.descript, c.locationEntry, c.locationToEntry FROM AM12PICKUP a WHERE a.natxnorguser = ? AND a.nuxractivity = ?",
+                        new String[] { LoginActivity.nauser , String.valueOf(this.autosave.getNuxractivity())});
+        // Cursor cursor =
+        // this.invSaveDB.rawQuery("SELECT a.nuxractivity, a.naactivity, a.nuxracttype, a.dttxnorigin, a.dttxnupdate, b.deacttype FROM AM12ACTIVITY a, AL112ACTTYPE b WHERE a.natxnorguser = ? AND a.nuxracttype = b.nuxracttype",
+        // new String[]{LoginActivity.nauser});
+        // looping through all rows and adding to list
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                this.imageInByte = cursor.getBlob(0);
+                System.out.println("restoreFromAutoSave try to get Image");
+                if (this.imageInByte!=null && this.imageInByte.length>0) {
+                    System.out.println("restoreFromAutoSave Image found in SQLITE SIZE:"+ this.imageInByte.length);
+                    Bitmap bmp=BitmapFactory.decodeByteArray(this.imageInByte,0,this.imageInByte.length);
+                    sign.setImage(bmp);
+                    System.out.println("restoreFromAutoSave Image should have been restored");
+                }
+                this.remoteBox.setSelected((cursor.getInt(1)==1));
+                this.paperworkBox.setSelected((cursor.getInt(2)==1));
+                this.remoteShipType.setSelection(getShiptypeIndex(cursor.getString(3)));
+
+            } while (cursor.moveToNext());
+        }
+        
+    }
+    
+    public int getShiptypeIndex(String shiptype) {
+        String curShiptype;
+        for (int x=0;x<remoteShipType.getAdapter().getCount();x++) {
+            curShiptype  = this.remoteShipType.getItemAtPosition(x).toString();
+            if (curShiptype.equals(shiptype)) {
+                return x;
+            }
+        }
+        return -1;
+    }
+    
+    
+    
+    private class GetEmployeeListTask extends AsyncTask<Void, Void, String>
+    {
 
         @Override
         protected void onPreExecute() {
@@ -946,7 +1086,8 @@ public class Pickup3 extends SenateActivity
                 // TODO Handle problems..
             }
 
-            if (responseString == null || responseString.indexOf("Session timed out") != -1) {
+            if (responseString == null
+                    || responseString.indexOf("Session timed out") != -1) {
                 return responseString;
             }
 
@@ -983,8 +1124,8 @@ public class Pickup3 extends SenateActivity
                 return;
             }
 
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(Pickup3.this,
-                    android.R.layout.simple_dropdown_item_1line,
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                    Pickup3.this, android.R.layout.simple_dropdown_item_1line,
                     employeeNameList);
 
             employeeNamesView.setThreshold(1);
@@ -993,6 +1134,18 @@ public class Pickup3 extends SenateActivity
     }
 
     public void remoteBoxClicked(View view) {
+        if (!pickup.getOrigin().isRemote() && !pickup.getDestination().isRemote()) {
+            AlertDialog.Builder errorMsg = new AlertDialog.Builder(this)
+            .setTitle("Error setting as Remote.")
+            .setMessage("Albany to Albany transactions should not be processed as remote.")
+            .setCancelable(false)
+            .setNeutralButton(Html.fromHtml("<b>Ok</b>"), null);
+
+            errorMsg.show();
+            remoteBox.setChecked(false);
+            return;
+        }
+
         // If checked
         if (((CheckBox) view).isChecked()) {
             remoteShipType.setVisibility(Spinner.VISIBLE);
@@ -1000,13 +1153,16 @@ public class Pickup3 extends SenateActivity
             remoteShipType.setVisibility(Spinner.INVISIBLE);
             pickup.setShipType("");
         }
+        this.autoSaveNow();
     }
 
     public void paperworkRequestedClick(View view) {
         // TODO: implement
-    }
+        this.autoSaveNow();
+     }
 
     private boolean isRemoteOptionVisible() {
-        return (remoteShipType.getVisibility() == Spinner.VISIBLE) ? true : false;
+        return (remoteShipType.getVisibility() == Spinner.VISIBLE) ? true
+                : false;
     }
 }

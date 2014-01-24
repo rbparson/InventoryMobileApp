@@ -46,7 +46,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class ChangePickupDestination extends SenateActivity {
+public class ChangePickupDestination extends SenateActivity
+{
 
     Transaction pickup;
     ProgressBar progressBar;
@@ -75,42 +76,54 @@ public class ChangePickupDestination extends SenateActivity {
         newLocRespCenterHd = (TextView) findViewById(R.id.tvOfficeD);
         newLocAddress = (TextView) findViewById(R.id.tvDescriptD);
 
-        pickup = TransactionParser.parseTransaction(getIntent().getStringExtra("pickup"));
-
+        pickup = TransactionParser.parseTransaction(getIntent().getStringExtra(
+                "pickup"));
 
         String date = getIntent().getStringExtra("date");
 
-        oldPickupLocation.setText(Html.fromHtml(pickup.getOrigin().getLocationSummaryStringRemoteAppended()));
-        oldDeliveryLocation.setText(Html.fromHtml(pickup.getDestination().getLocationSummaryStringRemoteAppended()));
+        if (pickup.isRemote()) {
+            oldPickupLocation.setText(Html.fromHtml(pickup.getOrigin().getLocationSummaryStringRemoteAppended()));
+            oldDeliveryLocation.setText(Html.fromHtml(pickup.getDestination().getLocationSummaryStringRemoteAppended()));
+        } else {
+            oldPickupLocation.setText(pickup.getOrigin().getLocationSummaryString());
+            oldDeliveryLocation.setText(pickup.getDestination().getLocationSummaryString());
+        }
         oldPickupBy.setText(pickup.getNapickupby());
         oldCount.setText(Integer.toString(pickup.getPickupItems().size()));
         SimpleDateFormat sdf = ((InvApplication)getApplicationContext()).getSdf();
         oldDate.setText(sdf.format(pickup.getPickupDate()));
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            new GetLocations().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            new GetLocations()
+                    .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         } else {
             new GetLocations().execute();
         }
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, locations);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_dropdown_item_1line, locations);
         newDeliveryLocation.setThreshold(1);
         newDeliveryLocation.setAdapter(adapter);
         newDeliveryLocation.addTextChangedListener(destinationTextWatcher);
-        newDeliveryLocation.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        newDeliveryLocation
+                .setOnItemClickListener(new AdapterView.OnItemClickListener()
+                {
 
-            @Override
-            public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                    new LocationDetails().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                } else {
-                    new LocationDetails().execute();
-                }
-            }
-        });
+                    @Override
+                    public void onItemClick(AdapterView<?> arg0, View arg1,
+                            int arg2, long arg3) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                            new LocationDetails()
+                                    .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        } else {
+                            new LocationDetails().execute();
+                        }
+                    }
+                });
     }
 
-    private class GetLocations extends AsyncTask<Void, Void, String> {
+    private class GetLocations extends AsyncTask<Void, Void, String>
+    {
 
         @Override
         protected void onPreExecute() {
@@ -159,7 +172,9 @@ public class ChangePickupDestination extends SenateActivity {
         }
     }
 
-    private class LocationDetails extends AsyncTask<Void, Map<TextView, String>, String> {
+    private class LocationDetails extends
+            AsyncTask<Void, Map<TextView, String>, String>
+    {
 
         @Override
         protected void onPreExecute() {
@@ -178,7 +193,8 @@ public class ChangePickupDestination extends SenateActivity {
             String url = AppProperties.getBaseUrl(ChangePickupDestination.this);
 
             // barcode_num is actually the cdLoc
-            url += "LocationDetails?barcode_num=" + parseCdLoc(newDeliveryLocation.getText().toString());
+            url += "LocationDetails?barcode_num="
+                    + parseCdLoc(newDeliveryLocation.getText().toString());
             url += "&userFallback=" + LoginActivity.nauser;
 
             try {
@@ -194,7 +210,8 @@ public class ChangePickupDestination extends SenateActivity {
             String adstreet1 = "";
             try {
                 // TODO: Fully implement with Location object.
-                JSONObject json = (JSONObject) new JSONTokener(out.toString()).nextValue();
+                JSONObject json = (JSONObject) new JSONTokener(out.toString())
+                        .nextValue();
                 newLocation.setCdlocat(json.getString("cdlocat"));
                 respctrhd = json.getString("cdrespctrhd");
                 adstreet1 = json.getString("adstreet1");
@@ -261,39 +278,54 @@ public class ChangePickupDestination extends SenateActivity {
 
         if (locations.indexOf(newDeliveryLocation.getText().toString()) == -1) {
             if (newDeliveryLocation.getText().length() > 0) {
-                Toasty.displayCenteredMessage(this, "You must enter a valid Delivery Location.", Toast.LENGTH_SHORT);
+                Toasty.displayCenteredMessage(this,
+                        "You must enter a valid Delivery Location.",
+                        Toast.LENGTH_SHORT);
             } else {
-                Toasty.displayCenteredMessage(this, "You must enter a new Delivery Location.", Toast.LENGTH_SHORT);
+                Toasty.displayCenteredMessage(this,
+                        "You must enter a new Delivery Location.",
+                        Toast.LENGTH_SHORT);
             }
             return;
         }
         AlertDialog.Builder confirmDialog = new AlertDialog.Builder(this);
         confirmDialog.setCancelable(false);
-        confirmDialog.setTitle(Html.fromHtml("<font color='#000055'>Change Delivery Location</font>"));
-        confirmDialog.setMessage(Html.fromHtml("Are you sure you want to change the delivery location to " + newLocation.getCdlocat() + "?"));
-        confirmDialog.setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener() {
+        confirmDialog
+                .setTitle(Html
+                        .fromHtml("<font color='#000055'>Change Delivery Location</font>"));
+        confirmDialog
+                .setMessage(Html
+                        .fromHtml("Are you sure you want to change the delivery location to "
+                                + newLocation.getCdlocat() + "?"));
+        confirmDialog.setNegativeButton(Html.fromHtml("<b>No</b>"),
+                new DialogInterface.OnClickListener()
+                {
 
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                return;
-            }
-        });
-        confirmDialog.setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        return;
+                    }
+                });
+        confirmDialog.setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                new DialogInterface.OnClickListener()
+                {
 
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                    new ChangeDeliveryLocation().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                } else {
-                    new ChangeDeliveryLocation().execute();
-                }
-            }
-        });
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                            new ChangeDeliveryLocation()
+                                    .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        } else {
+                            new ChangeDeliveryLocation().execute();
+                        }
+                    }
+                });
         confirmDialog.show();
     }
 
-    private class ChangeDeliveryLocation extends AsyncTask<Void, Void, Integer> {
+    private class ChangeDeliveryLocation extends AsyncTask<Void, Void, Integer>
+    {
 
         @Override
         protected void onPreExecute() {
@@ -304,11 +336,13 @@ public class ChangePickupDestination extends SenateActivity {
         protected Integer doInBackground(Void... params) {
             HttpClient httpClient = LoginActivity.getHttpClient();
             HttpResponse response = null;
-            String url = (String) LoginActivity.properties.get("WEBAPP_BASE_URL");
+            String url = (String) LoginActivity.properties
+                    .get("WEBAPP_BASE_URL");
             if (!url.endsWith("/")) {
                 url += "/";
             }
-            url += "ChangeDeliveryLocation?nuxrpd=" + pickup.getNuxrpd() + "&cdloc=" + newLocation.getCdlocat();
+            url += "ChangeDeliveryLocation?nuxrpd=" + pickup.getNuxrpd()
+                    + "&cdloc=" + newLocation.getCdlocat();
             url += "&userFallback=" + LoginActivity.nauser;
 
             try {
@@ -325,12 +359,14 @@ public class ChangePickupDestination extends SenateActivity {
         @Override
         protected void onPostExecute(Integer response) {
             progressBar.setVisibility(ProgressBar.INVISIBLE);
-            Intent intent = new Intent(ChangePickupDestination.this, EditPickupMenu.class);
+            Intent intent = new Intent(ChangePickupDestination.this,
+                    EditPickupMenu.class);
             intent.putExtra("nuxrpd", Integer.toString(pickup.getNuxrpd()));
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);
             overridePendingTransition(R.anim.in_right, R.anim.out_left);
-            HttpUtils.displayResponseResults(ChangePickupDestination.this, response);
+            HttpUtils.displayResponseResults(ChangePickupDestination.this,
+                    response);
         }
     }
 

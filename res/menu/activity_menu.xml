@@ -1,5 +1,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
+    <item
+        android:id="@+id/menu_clear_autosave"
+        android:orderInCategory="100"
+        android:showAsAction="always"
+        android:title="@string/menu_clear_autosave"/>
+    
  	<item android:id="@+id/aboutApp"
  	      android:orderInCategory="1000"
  	      android:enabled="true" 

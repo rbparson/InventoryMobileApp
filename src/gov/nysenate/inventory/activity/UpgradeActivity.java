@@ -287,20 +287,22 @@ public class UpgradeActivity extends SenateActivity
                 .setTitle(
                         Html.fromHtml("<font color='#000055'>CLOSE APP</font>"));
         // Add the buttons
-        builder.setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int id) {
-                closeAllActivities();
-            }
-        });
-        builder.setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int id) {
-                // User cancelled the dialog
-            }
-        });
+        builder.setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        closeAllActivities();
+                    }
+                });
+        builder.setNegativeButton(Html.fromHtml("<b>No</b>"),
+                new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User cancelled the dialog
+                    }
+                });
 
         // 3. Get the AlertDialog from create()
         AlertDialog dialog = builder.create();

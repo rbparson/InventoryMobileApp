@@ -95,7 +95,9 @@ public class ClearableTextView extends TextView
                                 context);
                         // Add the buttons
                         builder.setMessage(clearMsg)
-                                .setPositiveButton(Html.fromHtml(getResources().getString(R.string.ok_button)),
+                                .setPositiveButton(
+                                        Html.fromHtml(getResources().getString(
+                                                R.string.ok_button)),
                                         new DialogInterface.OnClickListener()
                                         {
                                             @Override
@@ -109,7 +111,9 @@ public class ClearableTextView extends TextView
                                                         .removeClearButton();
                                             }
                                         })
-                                .setNegativeButton(Html.fromHtml(getResources().getString(R.string.cancel_button)),
+                                .setNegativeButton(
+                                        Html.fromHtml(getResources().getString(
+                                                R.string.cancel_button)),
                                         new DialogInterface.OnClickListener()
                                         {
                                             @Override
@@ -129,7 +133,8 @@ public class ClearableTextView extends TextView
                         tv.setText("");
                         ClearableTextView.this.removeClearButton();
                         for (ClearButtonListener clearButtonListener : listeners)
-                            clearButtonListener.onClearButtonPressed((AdapterView) v, v);
+                            clearButtonListener.onClearButtonPressed(
+                                    (AdapterView) v, v);
                     }
 
                 } else {
@@ -147,8 +152,9 @@ public class ClearableTextView extends TextView
 
                 ClearableTextView.this.manageClearButton();
                 SenateActivity.timer.cancel();
-                if(!SenateActivity.getCurrentActivity().equalsIgnoreCase("LoginActivity"))
-                SenateActivity.timer.start();
+                if (!SenateActivity.getCurrentActivity().equalsIgnoreCase(
+                        "LoginActivity"))
+                    SenateActivity.timer.start();
             }
 
             @Override

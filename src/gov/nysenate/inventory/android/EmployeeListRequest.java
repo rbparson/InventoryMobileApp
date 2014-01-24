@@ -14,7 +14,8 @@ import org.apache.http.client.methods.HttpGet;
 
 import android.os.AsyncTask;
 
-public class EmployeeListRequest extends AsyncTask<String, String, String> {
+public class EmployeeListRequest extends AsyncTask<String, String, String>
+{
 
     @Override
     protected String doInBackground(String... uri) {
@@ -28,8 +29,7 @@ public class EmployeeListRequest extends AsyncTask<String, String, String> {
                 if (!uri[0].trim().endsWith("?")) {
                     urls.append("&");
                 }
-            }
-            else {
+            } else {
                 urls.append("?");
             }
             urls.append("userFallback=");
@@ -41,17 +41,14 @@ public class EmployeeListRequest extends AsyncTask<String, String, String> {
                 response.getEntity().writeTo(out);
                 out.close();
                 responseString = out.toString();
-            }
-            else {
+            } else {
                 // Closes the connection.
                 response.getEntity().getContent().close();
                 throw new IOException(statusLine.getReasonPhrase());
             }
-        }
-        catch (ClientProtocolException e) {
+        } catch (ClientProtocolException e) {
             // TODO Handle problems..
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             // TODO Handle problems..
         }
         return responseString;

@@ -31,8 +31,11 @@ public class Move extends SenateActivity implements OnItemClickListener
     public String URL = null;
     TextView pickupDeliveryStats;
 
-    public static final String[] titles = new String[] { "New Pickup", "Edit Existing Pickup", "Delivery",
-            "Main Menu" };/* , "Pickup/Deliver Log" */
+    public static final String[] titles = new String[] { "New Pickup",
+            "Edit Existing Pickup", "Delivery", "Main Menu" };/*
+                                                               * ,
+                                                               * "Pickup/Deliver Log"
+                                                               */
 
     public static final String[] descriptions = new String[] {
             "Pickup items from initial location",
@@ -43,8 +46,15 @@ public class Move extends SenateActivity implements OnItemClickListener
                                           * "Show History on Pickup/Delivered items"
                                           */
 
-    public static final Integer[] images = { R.drawable.pickup, R.drawable.editpickup,
-            R.drawable.delivery2, R.drawable.mainmenu }; /* , R.drawable.log */
+    public static final Integer[] images = { R.drawable.pickup,
+            R.drawable.editpickup, R.drawable.delivery2, R.drawable.mainmenu }; /*
+                                                                                 * ,
+                                                                                 * R
+                                                                                 * .
+                                                                                 * drawable
+                                                                                 * .
+                                                                                 * log
+                                                                                 */
 
     ListView listView;
     List<RowItem> rowItems;
@@ -153,7 +163,7 @@ public class Move extends SenateActivity implements OnItemClickListener
         overridePendingTransition(R.anim.in_left, R.anim.out_right);
 
     }
-    
+
     public void editPickup(View view) {
         Intent intent = new Intent(this, EditPickup1Activity.class);
         startActivity(intent);

@@ -127,6 +127,7 @@ public class RequestTask extends AsyncTask<String, String, String>
             }
         }
         url.append(currentURI);
+
         if (uri[0].indexOf("?") > -1) {
             if (!uri[0].trim().endsWith("?")) {
                 url.append("&");
@@ -136,6 +137,7 @@ public class RequestTask extends AsyncTask<String, String, String>
         }
         url.append("userFallback=");
         url.append(LoginActivity.nauser);
+        // Log.i("RequestTask", "url:"+url);
 
         try {
             if (currentMode == POST) {

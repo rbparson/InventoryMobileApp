@@ -109,6 +109,7 @@
     <string name="title_activity_upgrade">Inventory App Update</string>
     <string name="title_activity_main">MainActivity</string>
 	<string name="pickup3_title">Pickup Summary Confirmation/Release</string>
+	<string name="menu_clear_autosave">Clear All Saves</string>
 	<string name="enter_comments_box">Enter Comments</string>
 	<string name="enter_osr_ref_num">OSR Reference #</string>
 	<string name="enter_remote_employee">Enter Remote Employee Signer</string>

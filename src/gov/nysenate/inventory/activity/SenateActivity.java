@@ -12,10 +12,12 @@ import gov.nysenate.inventory.android.R.anim;
 import gov.nysenate.inventory.android.R.id;
 import gov.nysenate.inventory.listener.CommodityDialogListener;
 import gov.nysenate.inventory.listener.OnKeywordChangeListener;
+import gov.nysenate.inventory.model.AutoSaveItem;
 import gov.nysenate.inventory.model.Commodity;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -64,18 +66,24 @@ public abstract class SenateActivity extends Activity implements
     // private CheckInternet receiver;
     public static final IntentFilter INTENT_FILTER = createIntentFilter();
     public static long maxWifiWaitTime = 20 * 1000; // 20 Seconds
-
+    public static Properties properties; // Since we want to refer to this in
+    // other activities
     public int dialogSelectedRow = -1;
     public String dialogKeywords = null;
     public String dialogComments = null;
     public String dialogTitle = null;
     public String dialogMsg = null;
     public boolean senateTagNum = false;
+    public AutoSaveItem autosave = null;
+    public static int timeoutTimerMinutes = 15;
+    Resources resources = null;
+    public static Date timeoutTimerStart;
 
     public NewInvDialog newInvDialog = null;
     public CommentsDialog commentsDialog = null;
-    static Context stContext;
 
+    public boolean currentlyRestoringAutosave = false;
+    static Context stContext;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -117,6 +125,10 @@ public abstract class SenateActivity extends Activity implements
         int[] sounds = new int[1];
         sounds[0] = sound;
         playSounds(sounds);
+    }
+
+    public void restoreAutoSave(AutoSaveItem autoSave) {
+
     }
 
     public void playSounds(int[] sounds) {
@@ -162,7 +174,7 @@ public abstract class SenateActivity extends Activity implements
             }
         }
     }
-    
+
     protected void closeAllActivities() {
         sendBroadcast(new Intent(FINISH_ALL_ACTIVITIES_ACTIVITY_ACTION));
         InvApplication.activityDestroyed();
@@ -359,24 +371,26 @@ public abstract class SenateActivity extends Activity implements
                 .setMessage(
                         Html.fromHtml("!!ERROR: There was <font color='RED'><b>NO SERVER RESPONSE</b></font>. <br/> Please contact STS/BAC."))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
 
-                        CharSequence text = "No action taken due to NO SERVER RESPONSE";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "No action taken due to NO SERVER RESPONSE";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
@@ -397,18 +411,60 @@ public abstract class SenateActivity extends Activity implements
         InvApplication.activityResumed();
         checkInternetConnection();
         timer.cancel();
-        if(!this.getClass().getSimpleName().equalsIgnoreCase("LoginActivity"))
-        timer.start();
+        if (!this.getClass().getSimpleName().equalsIgnoreCase("LoginActivity")) {
+/*            Date dtNow = new Date();
+            if (this.timeoutTimerStart != null
+                    && dtNow.getTime() >= this.timeoutTimerStart.getTime()
+                            + (long) (timeoutTimerMinutes * 60 * 1000)) {
+                System.out
+                        .println("Timeout already Expired "
+                                + ((dtNow.getTime() - (this.timeoutTimerStart
+                                        .getTime() + (long) (timeoutTimerMinutes * 60 * 1000))) / (long) 1000)
+                                + " SECONDS AGO");
+                inactivityTimeout();
+            } else {
+                if (this.timeoutTimerStart != null) {
+                    System.out
+                            .println("onResume Timeout set to "
+                                    + (this.timeoutTimerStart.getTime() + (long) (timeoutTimerMinutes * 60 * 1000) / 1000));
+                    timer = null;
+                    timer = new CountDownTimer(
+                            (dtNow.getTime() - (this.timeoutTimerStart
+                                    .getTime() + (long) (timeoutTimerMinutes * 60 * 1000))),
+                            1000)
+                    {
+
+                        @Override
+                        public void onTick(long millisUntilFinished) {
+                            // TODO Auto-generated method stub
+                            System.out.println("(" + timeoutTimerMinutes
+                                    + ") TIMEOUT IN:"
+                                    + (millisUntilFinished / 1000)
+                                    + " SECONDS...");
+                        }
+
+                        @Override
+                        public void onFinish() {
+                            // TODO Auto-generated method stub
+                            System.out.println ("(2) onFinish: Timeout Timer Expired");
+                            inactivityTimeout();
+                        }
+
+                    };
+                }
+                System.gc();
+                timer.start();
+            }*/
+            timer.start();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         InvApplication.activityPaused();
-        
         timer.cancel();
     }
-
 
     public int checkServerResponse() {
         return checkServerResponse(true);
@@ -604,38 +660,43 @@ public abstract class SenateActivity extends Activity implements
                 + title + "</font>"));
 
         // set dialog message
-        alertDialogBuilder.setMessage(Html.fromHtml(msg)).setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
+        alertDialogBuilder
+                .setMessage(Html.fromHtml(msg))
+                .setCancelable(false)
+                .setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
 
-                        turnWifiOn();
+                                turnWifiOn();
 
-                        dialog.dismiss();
-                    }
+                                dialog.dismiss();
+                            }
 
-                })
-                .setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
+                        })
+                .setNegativeButton(Html.fromHtml("<b>No</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
 
-                        CharSequence text = "Wifi will remain off.";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "Wifi will remain off.";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        dialog.dismiss();
-                    }
+                                dialog.dismiss();
+                            }
 
-                });
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
@@ -705,60 +766,113 @@ public abstract class SenateActivity extends Activity implements
         getDialogDataFromServer();
 
     }
-public static CountDownTimer timer = new CountDownTimer(15 *60 * 1000, 1000) {
-		
-		@Override
-		public void onTick(long millisUntilFinished) {
-			// TODO Auto-generated method stub
-			System.out.println(millisUntilFinished/1000);
-		}
-		
-		@Override
-		public void onFinish() {
-			// TODO Auto-generated method stub
-			inactivityTimeout();
-		}
-		
-	};
-	
-	public static void inactivityTimeout()
-	{
-		Intent myIntent = new Intent(stContext, LoginActivity.class); 
+
+    public static CountDownTimer timer = new CountDownTimer(
+            timeoutTimerMinutes * 60 * 1000, 1000)
+    {
+
+        @Override
+        public void onTick(long millisUntilFinished) {
+            // TODO Auto-generated method stub
+            System.out.println("(" + timeoutTimerMinutes + ") TIMEOUT IN:"
+                    + (millisUntilFinished / 1000) + " SECONDS...");
+        }
+
+        @Override
+        public void onFinish() {
+            // TODO Auto-generated method stub
+            System.out.println ("(3) onFinish: Timeout Timer Expired");            
+            inactivityTimeout();
+        }
+
+    };
+
+    public static void inactivityTimeout() {
+        Intent myIntent = new Intent(stContext, LoginActivity.class);
         myIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         myIntent.putExtra("TIMEOUTFROM", "softkey");
-		stContext.startActivity(myIntent);
-	}
-   
-   @Override
-    public void onUserInteraction(){
-	   		  timer.cancel();
-	   		if(!this.getClass().getSimpleName().equalsIgnoreCase("LoginActivity"))
-    		  timer.start();
-    		  super.onUserInteraction();
-    		  System.out.println("name:: "+SenateActivity.this.getClass().getSimpleName());
+        stContext.startActivity(myIntent);
     }
-    
+
+    @Override
+    public void onUserInteraction() {
+        timer.cancel();
+        if (!this.getClass().getSimpleName().equalsIgnoreCase("LoginActivity")) {
+            this.timeoutTimerStart = new Date();
+            timer.start();
+        }
+        super.onUserInteraction();
+        System.out.println("name:: "
+                + SenateActivity.this.getClass().getSimpleName());
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-    	// TODO Auto-generated method stub
-    	super.onCreate(savedInstanceState);
-    	if(stContext == null)
-    		stContext = getApplicationContext();
-    	if(!this.getClass().getSimpleName().equalsIgnoreCase("LoginActivity"))
-    	timer.start();
-    	setCurrentActivity(this.getClass().getSimpleName());
+        // TODO Auto-generated method stub
+        super.onCreate(savedInstanceState);
+        resources = this.getResources();
+        this.timeoutTimerStart = null;
+        AssetManager assetManager = resources.getAssets();
+        try {
+            InputStream inputStream = assetManager.open("invApp.properties");
+            properties = new Properties();
+            properties.load(inputStream); // we load the properties here and we
+                                          // use same object elsewhere in
+                                          // project
+            try {
+                timeoutTimerMinutes = new Integer(
+                        (String) properties.get("TIMEOUTMINUTES")).intValue();
+                System.out.println("Timeout Minutes set to:"
+                        + timeoutTimerMinutes);
+            } catch (Exception e0) {
+                timeoutTimerMinutes = 15; // Default Timeout
+                System.out.println("Timeout Minutes set to default because "
+                        + e0.getMessage());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (stContext == null)
+            stContext = getApplicationContext();
+        if (!this.getClass().getSimpleName().equalsIgnoreCase("LoginActivity")) {
+            timeoutTimerStart = new Date();
+            if (timer!=null) {
+                timer.cancel();
+            }
+            timer = new CountDownTimer(timeoutTimerMinutes * 60 * 1000, 1000)
+            {
+
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    // TODO Auto-generated method stub
+                    System.out.println("(" + timeoutTimerMinutes
+                            + ") TIMEOUT IN:" + (millisUntilFinished / 1000)
+                            + " SECONDS...");
+                }
+
+                @Override
+                public void onFinish() {
+                    // TODO Auto-generated method stub
+                    System.out.println ("(1) onFinish: Timeout Timer Expired");
+                    inactivityTimeout();
+                }
+
+            };
+            System.gc();
+            timer.start();
+        }
+        setCurrentActivity(this.getClass().getSimpleName());
     }
-    
-       
-    private static String activity; 
-    
-    public void setCurrentActivity(String activity)
-    {
-    	SenateActivity.activity = activity;
+
+    private static String activity;
+
+    public void setCurrentActivity(String activity) {
+        SenateActivity.activity = activity;
     }
-    public static String getCurrentActivity()
-    {
-    	return activity;
+
+    public static String getCurrentActivity() {
+        return activity;
     }
 
 }

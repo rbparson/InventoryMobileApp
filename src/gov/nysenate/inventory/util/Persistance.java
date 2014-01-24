@@ -7,7 +7,8 @@ import java.io.IOException;
 
 import android.content.Context;
 
-public class Persistance {
+public class Persistance
+{
     private int length;
     private Context context;
     private String locationData;

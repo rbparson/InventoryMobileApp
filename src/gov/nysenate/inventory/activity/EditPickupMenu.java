@@ -27,7 +27,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.json.JSONException;
 
-
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -43,15 +42,16 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class EditPickupMenu extends SenateActivity implements OnItemClickListener
+public class EditPickupMenu extends SenateActivity implements
+        OnItemClickListener
 {
     private Transaction pickup;
     private ProgressBar progressBar;
     private List<RowItem> menuRowItems;
     private static final String[] titles = { "Cancel Pickup", "Change Delivery Location", "Change Pickup Location",
-            "Remove Items", "Move Menu" };
+            "Remove Items", "Change Remote Info", "Move Menu" };
     private static final Integer[] images = { R.drawable.cancelpickup, R.drawable.editlocdelivery, R.drawable.editlocpickup,
-            R.drawable.removeitems, R.drawable.mainmenu };
+            R.drawable.removeitems, R.drawable.edit_remote, R.drawable.mainmenu };
     private TextView oldPickupLocation;
     private TextView oldDeliveryLocation;
     private TextView oldPickupBy;
@@ -83,13 +83,15 @@ public class EditPickupMenu extends SenateActivity implements OnItemClickListene
             menuRowItems.add(new RowItem(images[i], titles[i]));
         }
 
-        CustomListViewAdapter adapter = new CustomListViewAdapter(this, R.layout.edit_pickup_menu, menuRowItems);
+        CustomListViewAdapter adapter = new CustomListViewAdapter(this,
+                R.layout.edit_pickup_menu, menuRowItems);
         menuRowsListView.setAdapter(adapter);
         menuRowsListView.setOnItemClickListener(this);
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+    public void onItemClick(AdapterView<?> parent, View view, int position,
+            long id) {
         RowItem selected = menuRowItems.get(position);
         if (checkServerResponse(true) == OK) {
             if (selected.getTitle().equalsIgnoreCase(titles[0])) {
@@ -105,6 +107,10 @@ public class EditPickupMenu extends SenateActivity implements OnItemClickListene
                 startActivity(RemovePickupItems.class);
 
             } else if (selected.getTitle().equalsIgnoreCase(titles[4])) {
+                startActivity(EditRemoteStatus.class);
+            }
+
+            else if (selected.getTitle().equalsIgnoreCase(titles[5])) {
                 startActivity(Move.class, R.anim.in_left);
             }
         }
@@ -135,7 +141,7 @@ public class EditPickupMenu extends SenateActivity implements OnItemClickListene
         case R.anim.in_up:
             outTransition = R.anim.out_up;
             break;
-        default: 
+        default:
             inTransition = R.anim.in_right;
             outTransition = R.anim.in_left;
         }
@@ -146,7 +152,8 @@ public class EditPickupMenu extends SenateActivity implements OnItemClickListene
         overridePendingTransition(inTransition, outTransition);
     }
 
-    private class GetPickup extends AsyncTask<Void, Void, Integer> {
+    private class GetPickup extends AsyncTask<Void, Void, Integer>
+    {
 
         @Override
         protected void onPreExecute() {
@@ -168,7 +175,8 @@ public class EditPickupMenu extends SenateActivity implements OnItemClickListene
             try {
                 response = httpClient.execute(new HttpGet(url));
                 response.getEntity().writeTo(out);
-                Log.i("EditPickupMenu", "Server Pickup Response:"+out.toString());
+                Log.i("EditPickupMenu",
+                        "Server Pickup Response:" + out.toString());
                 pickup = TransactionParser.parseTransaction(out.toString());
             } catch (ClientProtocolException e) {
                 e.printStackTrace();
@@ -183,18 +191,31 @@ public class EditPickupMenu extends SenateActivity implements OnItemClickListene
         protected void onPostExecute(Integer response) {
             progressBar.setVisibility(ProgressBar.INVISIBLE);
             if (response == HttpStatus.SC_OK) {
-                oldPickupLocation.setText(Html.fromHtml(pickup.getOrigin().getLocationSummaryStringRemoteAppended()));
-                oldDeliveryLocation.setText(Html.fromHtml(pickup.getDestination().getLocationSummaryStringRemoteAppended()));
+                if (pickup.isRemote()) {
+                    oldPickupLocation.setText(Html.fromHtml(pickup.getOrigin().getLocationSummaryStringRemoteAppended()));
+                    oldDeliveryLocation.setText(Html.fromHtml(pickup.getDestination().getLocationSummaryStringRemoteAppended()));
+                } else {
+                    oldPickupLocation.setText(pickup.getOrigin().getLocationSummaryString());
+                    oldDeliveryLocation.setText(pickup.getDestination().getLocationSummaryString());
+                }
                 oldPickupBy.setText(pickup.getNapickupby());
                 oldCount.setText(Integer.toString(pickup.getPickupItems().size()));
                 SimpleDateFormat sdf = ((InvApplication)getApplicationContext()).getSdf();
                 oldDate.setText(sdf.format(pickup.getPickupDate()));
             } else if (response == HttpStatus.SC_BAD_REQUEST) {
-                Toasty.displayCenteredMessage(EditPickupMenu.this, "!!ERROR: Unable to get pickup info, invalid nuxrpd.", Toast.LENGTH_SHORT);
+                Toasty.displayCenteredMessage(EditPickupMenu.this,
+                        "!!ERROR: Unable to get pickup info, invalid nuxrpd.",
+                        Toast.LENGTH_SHORT);
             } else if (response == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-                Toasty.displayCenteredMessage(EditPickupMenu.this, "!!ERROR: Database Error while trying to get pickup info.", Toast.LENGTH_SHORT);
+                Toasty.displayCenteredMessage(
+                        EditPickupMenu.this,
+                        "!!ERROR: Database Error while trying to get pickup info.",
+                        Toast.LENGTH_SHORT);
             } else {
-                Toasty.displayCenteredMessage(EditPickupMenu.this, "!!ERROR: Unknown Error occured pickup data may be inaccurate.", Toast.LENGTH_SHORT);
+                Toasty.displayCenteredMessage(
+                        EditPickupMenu.this,
+                        "!!ERROR: Unknown Error occured pickup data may be inaccurate.",
+                        Toast.LENGTH_SHORT);
             }
         }
     }

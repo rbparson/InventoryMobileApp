@@ -113,38 +113,43 @@ public class CheckInternet extends BroadcastReceiver
                 + title + "</font>"));
 
         // set dialog message
-        alertDialogBuilder.setMessage(Html.fromHtml(msg)).setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
+        alertDialogBuilder
+                .setMessage(Html.fromHtml(msg))
+                .setCancelable(false)
+                .setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
 
-                        turnWifiOn();
+                                turnWifiOn();
 
-                        dialog.dismiss();
-                    }
+                                dialog.dismiss();
+                            }
 
-                })
-                .setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
+                        })
+                .setNegativeButton(Html.fromHtml("<b>No</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
 
-                        CharSequence text = "Wifi will remain off.";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "Wifi will remain off.";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        dialog.dismiss();
-                    }
+                                dialog.dismiss();
+                            }
 
-                });
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();

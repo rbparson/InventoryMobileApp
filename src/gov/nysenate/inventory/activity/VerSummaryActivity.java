@@ -20,6 +20,7 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -32,6 +33,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -72,13 +74,43 @@ public class VerSummaryActivity extends SenateActivity
     public final int VERIFICATIONREPORTS_TIMEOUT = 101,
             CONTINUEBUTTON_TIMEOUT = 102;
     String URL = null;
+    String className = this.getClass().getSimpleName();
+    boolean currentlyRestoringAutosave = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ver_summary);
         registerBaseActivityReceiver();
+        System.out.println("CLASSNAME:" + className);
         currentActivity = this;
+
+        try {
+            autosave = getIntent().getParcelableExtra("autosave");
+            if (autosave != null) {
+                System.out
+                        .println("****VERIFICATIONSAN: TRYING TO RESTORE....");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            autosave = null;
+            System.out.println("****VERIFICATIONSAN: NOTHING TO RESTORE.");
+        }
+
+        try {
+            ContentValues values = new ContentValues();
+            values.put("naactivity", className);
+            values.put("dttxnupdate", MenuActivity.invSaveDB.getNow());
+            values.put("natxnupduser", LoginActivity.nauser);
+
+            long rowcnt = MenuActivity.invSaveDB.update("AM12ACTIVITY", values,
+                    "nuxractivity = ?",
+                    new String[] { Verification.nuxractivity });
+
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         // Summary Fields
 
@@ -201,6 +233,7 @@ public class VerSummaryActivity extends SenateActivity
         ListViewTab2.setAdapter(listAdapter2);
         ListViewTab3.setAdapter(listAdapter3);
         Log.i("VerSumActivity", "onCreate done");
+        handleAutosave();
     }
 
     @Override
@@ -322,24 +355,26 @@ public class VerSummaryActivity extends SenateActivity
                 .setMessage(
                         Html.fromHtml("!!ERROR: There was <font color='RED'><b>NO SERVER RESPONSE</b></font>. <br/> Please contact STS/BAC."))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
 
-                        CharSequence text = "No action taken due to NO SERVER RESPONSE";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "No action taken due to NO SERVER RESPONSE";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
@@ -557,6 +592,13 @@ public class VerSummaryActivity extends SenateActivity
         return newItems.size() - numNewItems();
     }
 
+    public void handleAutosave() {
+        if (this.autosave != null) {
+            currentlyRestoringAutosave = true;
+        }
+        currentlyRestoringAutosave = false;
+    }
+
     private void submitVerification() {
         Log.i("submitVerification", "start");
 
@@ -630,7 +672,7 @@ public class VerSummaryActivity extends SenateActivity
         Context context = getApplicationContext();
         CharSequence text = res;
         int duration = Toast.LENGTH_LONG;
-        Log.i("SubmitVerification", "Server Response:" + res);
+        // Log.i("SubmitVerification", "Server Response:" + res);
         if (res == null) {
             text = "!!ERROR: NO RESPONSE FROM SERVER";
         } else if (res.length() == 0) {
@@ -659,6 +701,20 @@ public class VerSummaryActivity extends SenateActivity
         }
 
         // ===================ends
+
+        // If all appears to have gone well, then we can get rid of the records
+        // for the autosave feature
+        long rowCnt = MenuActivity.invSaveDB.delete("AM12ACTIVITY",
+                "nuxractivity = ?", new String[] { Verification.nuxractivity });
+        System.out.println("*******DELETED " + rowCnt
+                + " record(s) from AM12ACTIVITY for nuxractivity = "
+                + Verification.nuxractivity);
+        rowCnt = MenuActivity.invSaveDB.delete("ad12verinv",
+                "nuxractivity = ?", new String[] { Verification.nuxractivity });
+        System.out.println("*******DELETED " + rowCnt
+                + " record(s) from ad12verinv for nuxractivity = "
+                + Verification.nuxractivity);
+
         Log.i("submitVerification", "go to menu");
         Intent intent = new Intent(this, MenuActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);

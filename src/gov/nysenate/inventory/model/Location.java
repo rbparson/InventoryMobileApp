@@ -81,7 +81,7 @@ public class Location implements Parcelable
     }
 
     public String getLocationSummaryString() {
-        return getCdlocat() + "-" + getCdloctype()+ ": " + getAdstreet1();
+        return getCdlocat() + "-" + getCdloctype() + ": " + getAdstreet1();
     }
 
     public String getLocationSummaryStringRemoteAppended() {
@@ -90,7 +90,8 @@ public class Location implements Parcelable
     }
 
     public String getFullAddress() {
-        return this.getAdstreet1() + " " + this.getAdcity() + ", " + this.getAdstate() + " " + this.getAdzipcode();
+        return this.getAdstreet1() + " " + this.getAdcity() + ", "
+                + this.getAdstate() + " " + this.getAdzipcode();
     }
 
     // ---------- Code for Parcelable interface --------------

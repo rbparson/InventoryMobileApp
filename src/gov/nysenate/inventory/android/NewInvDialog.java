@@ -64,14 +64,14 @@ public class NewInvDialog extends DialogFragment implements
     }
 
     @SuppressLint("ValidFragment")
-    public NewInvDialog(SenateActivity senateActivity, String title, String msg, int msgGravity) {
+    public NewInvDialog(SenateActivity senateActivity, String title,
+            String msg, int msgGravity) {
         this.senateActivity = senateActivity;
         this.title = title;
         this.msg = msg;
         this.msgGravity = msgGravity;
     }
-    
-    
+
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
 
@@ -106,8 +106,7 @@ public class NewInvDialog extends DialogFragment implements
                 .findViewById(R.id.progBarNewInvItem);
         btnKeywordSpeech = (ImageView) dialogView
                 .findViewById(R.id.btnKeywordSpeech);
-        tvMsg = (TextView) dialogView
-                .findViewById(R.id.tvMsg);
+        tvMsg = (TextView) dialogView.findViewById(R.id.tvMsg);
 
         if (senateActivity.dialogKeywords != null) {
             tvKeywordsToBlock.setText(senateActivity.dialogKeywords);
@@ -129,49 +128,58 @@ public class NewInvDialog extends DialogFragment implements
                         Html.fromHtml("<font color='#000055'>" + title
                                 + "</font>"))
                 .setCancelable(false)
-                .setPositiveButton( Html.fromHtml("<b>Save Tag# Info</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // Don't write any code here.. but coded here for now
-                        if (adapter != null && adapter.getRowSelected() > -1
-                                && adapter.getCount() > 0) {
-                            currentCommodity.setDecomments(etNewItemComments
-                                    .getText().toString());
-                            for (CommodityDialogListener commodityDialogListener : listeners)
-                                commodityDialogListener.commoditySelected(
-                                        position, currentCommodity);
-                            dialog.dismiss();
-                        } else if (etNewItemComments.getText().toString()
-                                .trim().length() > 0) {
-                            currentCommodity = new Commodity();
-                            currentCommodity.setDecomments(etNewItemComments
-                                    .getText().toString());
-                            for (CommodityDialogListener commodityDialogListener : listeners)
-                                commodityDialogListener.commoditySelected(
-                                        position, currentCommodity);
-                            dialog.dismiss();
-                        } else {
-                            int duration = Toast.LENGTH_SHORT;
+                .setPositiveButton(Html.fromHtml("<b>Save Tag# Info</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // Don't write any code here.. but coded here
+                                // for now
+                                if (adapter != null
+                                        && adapter.getRowSelected() > -1
+                                        && adapter.getCount() > 0) {
+                                    currentCommodity
+                                            .setDecomments(etNewItemComments
+                                                    .getText().toString());
+                                    for (CommodityDialogListener commodityDialogListener : listeners)
+                                        commodityDialogListener
+                                                .commoditySelected(position,
+                                                        currentCommodity);
+                                    dialog.dismiss();
+                                } else if (etNewItemComments.getText()
+                                        .toString().trim().length() > 0) {
+                                    currentCommodity = new Commodity();
+                                    currentCommodity
+                                            .setDecomments(etNewItemComments
+                                                    .getText().toString());
+                                    for (CommodityDialogListener commodityDialogListener : listeners)
+                                        commodityDialogListener
+                                                .commoditySelected(position,
+                                                        currentCommodity);
+                                    dialog.dismiss();
+                                } else {
+                                    int duration = Toast.LENGTH_SHORT;
 
-                            Toast toast = Toast.makeText(
-                                    senateActivity.getApplicationContext(),
-                                    "!!ERRROR: No Commodity Code selected or Comments entered.",
-                                    duration);
-                            toast.setGravity(Gravity.CENTER, 0, 0);
-                            toast.show();
-                        }
+                                    Toast toast = Toast.makeText(
+                                            senateActivity
+                                                    .getApplicationContext(),
+                                            "!!ERRROR: No Commodity Code selected or Comments entered.",
+                                            duration);
+                                    toast.setGravity(Gravity.CENTER, 0, 0);
+                                    toast.show();
+                                }
 
-                    }
-                })
-                .setNegativeButton(Html.fromHtml("<b>Cancel</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // cancelMsg();
-                        dismiss();
-                    }
-                });
+                            }
+                        })
+                .setNegativeButton(Html.fromHtml("<b>Cancel</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // cancelMsg();
+                                dismiss();
+                            }
+                        });
 
         /*
          * gestureDectector = new GestureDetector(senateActivity, new
@@ -194,8 +202,8 @@ public class NewInvDialog extends DialogFragment implements
 
         Dialog dialog = builder.create();
         dialog.setCanceledOnTouchOutside(false);
-        
-        if (msgGravity!=-1) {
+
+        if (msgGravity != -1) {
             tvMsg.setGravity(msgGravity);
         }
 
@@ -264,39 +272,44 @@ public class NewInvDialog extends DialogFragment implements
         alertDialogBuilder.setTitle(Html.fromHtml(cancelTitle));
 
         // set dialog message
-        alertDialogBuilder.setMessage(Html.fromHtml(cancelMsg))
+        alertDialogBuilder
+                .setMessage(Html.fromHtml(cancelMsg))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        dismiss();
-                    }
-                })
-                .setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, we need to reopen the
-                        // original Dialog
-                        senateActivity.dialogTitle = title;
-                        senateActivity.dialogMsg = msg;
+                .setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                dismiss();
+                            }
+                        })
+                .setNegativeButton(Html.fromHtml("<b>No</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, we need to reopen
+                                // the
+                                // original Dialog
+                                senateActivity.dialogTitle = title;
+                                senateActivity.dialogMsg = msg;
 
-                        if (adapter == null) {
-                            senateActivity.dialogSelectedRow = -1;
-                        } else {
-                            senateActivity.dialogSelectedRow = adapter.getRowSelected();
-                        }
-                        senateActivity.dialogComments = etNewItemComments
-                                .getText().toString();
-                        senateActivity.dialogKeywords = tvKeywordsToBlock
-                                .getText().toString();
+                                if (adapter == null) {
+                                    senateActivity.dialogSelectedRow = -1;
+                                } else {
+                                    senateActivity.dialogSelectedRow = adapter
+                                            .getRowSelected();
+                                }
+                                senateActivity.dialogComments = etNewItemComments
+                                        .getText().toString();
+                                senateActivity.dialogKeywords = tvKeywordsToBlock
+                                        .getText().toString();
 
-                        senateActivity.reOpenNewInvDialog();
-                    }
-                });
+                                senateActivity.reOpenNewInvDialog();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();

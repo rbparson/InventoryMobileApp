@@ -268,24 +268,26 @@ public class Delivery3 extends SenateActivity
                 .setMessage(
                         Html.fromHtml("!!ERROR: There was <font color='RED'><b>NO SERVER RESPONSE</b></font>. <br/> Please contact STS/BAC."))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
 
-                        CharSequence text = "No action taken due to NO SERVER RESPONSE";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "No action taken due to NO SERVER RESPONSE";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
@@ -305,7 +307,7 @@ public class Delivery3 extends SenateActivity
     }
 
     public int getEmployeeId(String name) {
-        for (Employee emp: employeeHiddenList) {
+        for (Employee emp : employeeHiddenList) {
             if (emp.getEmployeeName().equalsIgnoreCase(name)) {
                 return emp.getEmployeeXref();
             }
@@ -390,12 +392,16 @@ public class Delivery3 extends SenateActivity
                          */
 
                         if (!positiveButtonPressed) {
-                            // TODO: will have to get a properly/completely queried delivery for this to work.
+                            // TODO: will have to get a properly/completely
+                            // queried delivery for this to work.
                             if (delivery.isRemote()) {
-                                // Show fragment to get Remote info, calls positiveDialog() on completion.
-                                DialogFragment newFragment = RemoteConfirmationDialog.newInstance(employeeNameList, delivery);
+                                // Show fragment to get Remote info, calls
+                                // positiveDialog() on completion.
+                                DialogFragment newFragment = RemoteConfirmationDialog
+                                        .newInstance(employeeNameList, delivery);
                                 newFragment.setCancelable(false);
-                                newFragment.show(getFragmentManager(), "dialog");
+                                newFragment
+                                        .show(getFragmentManager(), "dialog");
                             } else {
                                 positiveDialog();
                             }
@@ -454,15 +460,13 @@ public class Delivery3 extends SenateActivity
             delivery.setPickupItems(invList);
             delivery.setCheckedItems(this.invAdapter.getSelectedItems(true));
 
-
             AsyncTask<String, String, String> resr1;
             try {
                 // Get the URL from the properties
                 String URL = LoginActivity.properties.get("WEBAPP_BASE_URL")
                         .toString();
                 this.deliveryRequestTaskType = "Delivery";
-                String deliveryURL = URL
-                        + "/DeliveryConfirmation?";
+                String deliveryURL = URL + "/DeliveryConfirmation?";
 
                 resr1 = new DeliveryRequestTask().execute(URL
                         + "/ImgUpload?nauser=" + LoginActivity.nauser
@@ -718,7 +722,13 @@ public class Delivery3 extends SenateActivity
 
                     URL url = new URL(urls.toString());
 
-                    HttpClient httpClient = LoginActivity.httpClient; // TODO: httpclient(at start of method) and httpClient...
+                    HttpClient httpClient = LoginActivity.httpClient; // TODO:
+                                                                      // httpclient(at
+                                                                      // start
+                                                                      // of
+                                                                      // method)
+                                                                      // and
+                                                                      // httpClient...
 
                     if (httpClient == null) {
                         Log.i(DeliveryRequestTask.class.getName(),
@@ -781,7 +791,8 @@ public class Delivery3 extends SenateActivity
                 delivery.setNuxrsccptsign(NUXRACCPTSIGN);
                 String deliveryjson = null;
                 try {
-                    deliveryjson = URLEncoder.encode(delivery.toJson(), "UTF-8");
+                    deliveryjson = URLEncoder
+                            .encode(delivery.toJson(), "UTF-8");
                 } catch (UnsupportedEncodingException e1) {
                     e1.printStackTrace();
                 }
@@ -956,8 +967,8 @@ public class Delivery3 extends SenateActivity
 
             this.deliveryRequestTaskType = "EmployeeDeliveryList";
             AsyncTask<String, String, String> resr1 = new DeliveryRequestTask()
-                    .execute(URL + "/EmployeeList", URL
-                            + "/GetPickup?nuxrpd=" + nuxrpd);
+                    .execute(URL + "/EmployeeList", URL + "/GetPickup?nuxrpd="
+                            + nuxrpd);
 
             try {
                 try {

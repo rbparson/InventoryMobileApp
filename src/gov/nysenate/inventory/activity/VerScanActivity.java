@@ -9,12 +9,6 @@ import gov.nysenate.inventory.android.MsgAlert;
 import gov.nysenate.inventory.android.NewInvDialog;
 import gov.nysenate.inventory.android.R;
 import gov.nysenate.inventory.android.RequestTask;
-import gov.nysenate.inventory.android.R.anim;
-import gov.nysenate.inventory.android.R.array;
-import gov.nysenate.inventory.android.R.id;
-import gov.nysenate.inventory.android.R.layout;
-import gov.nysenate.inventory.android.R.menu;
-import gov.nysenate.inventory.android.R.raw;
 import gov.nysenate.inventory.listener.CommentsDialogListener;
 import gov.nysenate.inventory.listener.CommodityDialogListener;
 import gov.nysenate.inventory.model.Commodity;
@@ -26,15 +20,18 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -63,7 +60,6 @@ import android.widget.Toast;
 public class VerScanActivity extends SenateActivity implements
         CommodityDialogListener, CommentsDialogListener
 {
-
     public ClearableEditText barcode;
     public TextView tv_counts_new;
     public TextView tv_counts_existing;
@@ -101,6 +97,7 @@ public class VerScanActivity extends SenateActivity implements
     Activity currentActivity;
     int currentState;
     InvItem inactiveInvItem;
+    String className = this.getClass().getSimpleName();
 
     String holdNusenate = null;
 
@@ -137,6 +134,8 @@ public class VerScanActivity extends SenateActivity implements
 
     android.app.FragmentManager fragmentManager = this.getFragmentManager();
 
+    boolean currentlyRestoringAutosave = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -148,10 +147,36 @@ public class VerScanActivity extends SenateActivity implements
         VerScanActivity.scannedItems = new ArrayList<InvItem>();
         VerScanActivity.newItems = new ArrayList<InvItem>();
 
+        try {
+            autosave = getIntent().getParcelableExtra("autosave");
+            if (autosave != null) {
+                System.out
+                        .println("****VERIFICATIONSAN: TRYING TO RESTORE....");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            autosave = null;
+            System.out.println("****VERIFICATIONSAN: NOTHING TO RESTORE.");
+        }
+
         // Get the location code from the previous activity
         Intent intent = getIntent();
         loc_code = intent.getStringExtra(Verification.loc_code_intent);
         cdloctype = intent.getStringExtra(Verification.cdloctype_intent);
+
+        try {
+            ContentValues values = new ContentValues();
+            values.put("naactivity", className);
+            values.put("dttxnupdate", MenuActivity.invSaveDB.getNow());
+            values.put("natxnupduser", LoginActivity.nauser);
+
+            long rowcnt = MenuActivity.invSaveDB.update("AM12ACTIVITY", values,
+                    "nuxractivity = ?",
+                    new String[] { Verification.nuxractivity });
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         // ----------code from other activity starts
         listView = (ListView) findViewById(R.id.preferenceList);
@@ -264,6 +289,7 @@ public class VerScanActivity extends SenateActivity implements
                 return true;
             }
         });
+        handleAutosave();
     }
 
     @Override
@@ -291,7 +317,6 @@ public class VerScanActivity extends SenateActivity implements
                 imm.showSoftInput(barcode, InputMethodManager.SHOW_FORCED);
             }
         }, 100);
-
     }
 
     public int countOf(ArrayList<InvItem> invList, String type) {
@@ -343,7 +368,7 @@ public class VerScanActivity extends SenateActivity implements
 
         case ITEMDETAILS_TIMEOUT:
             if (resultCode == RESULT_OK) {
-                handleItem(true);
+                handleItem(true, barcode.getText().toString());
             }
             break;
         case ITEMLIST_TIMEOUT:
@@ -406,37 +431,7 @@ public class VerScanActivity extends SenateActivity implements
         @Override
         public void afterTextChanged(Editable s) {
             if (barcode.getText().toString().length() >= 6) {
-                /*
-                 * Log.i("TESTING", " getItemDetails:" + barcode.getText() +
-                 * " (" + barcode.getText().length() + ")");
-                 */
-                // loc_details.setText(loc_code.getText().toString());
-                // listView.
-                String barcode_num = barcode.getText().toString().trim();
-                String barcode_number = barcode_num;
-
-                boolean barcodeFound = false;
-
-                // to delete an element from the list
-                int flag = 0;
-
-                // If the item is already scanned then display a
-                // toaster "Already Scanned"
-                if (findBarcode(barcode_num, AllScannedItems) > -1) {
-                    // display toaster
-                    barcodeFound = true;
-                    Context context = getApplicationContext();
-                    CharSequence text = "Already Scanned  ";
-                    int duration = Toast.LENGTH_SHORT;
-
-                    Toast toast = Toast.makeText(context, text, duration);
-                    toast.setGravity(Gravity.CENTER, 0, 0);
-                    toast.show();
-                    barcode.setText("");
-
-                    return;
-                }
-                handleItem();
+                handleCurrentSenateTag(barcode.getText().toString());
             }
         }
     };
@@ -468,7 +463,6 @@ public class VerScanActivity extends SenateActivity implements
         } catch (Exception ex) {
             return false;
         }
-
     }
 
     public int findBarcode(String barcode_num) {
@@ -514,39 +508,309 @@ public class VerScanActivity extends SenateActivity implements
         alertDialogBuilder.setTitle(Html.fromHtml(title.toString()));
 
         // set dialog message
-        alertDialogBuilder.setMessage(Html.fromHtml(msg.toString()))
+        alertDialogBuilder
+                .setMessage(Html.fromHtml(msg.toString()))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        if (barcode_num != null
-                                && barcode_num.trim().length() > 0) {
-                            Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                if (barcode_num != null
+                                        && barcode_num.trim().length() > 0) {
+                                    Context context = getApplicationContext();
 
-                            CharSequence text = "Senate Tag#: " + barcode_num
-                                    + " was NOT added";
-                            int duration = Toast.LENGTH_SHORT;
+                                    CharSequence text = "Senate Tag#: "
+                                            + barcode_num + " was NOT added";
+                                    int duration = Toast.LENGTH_SHORT;
 
-                            Toast toast = Toast.makeText(context, text,
-                                    duration);
-                            toast.setGravity(Gravity.CENTER, 0, 0);
-                            toast.show();
-                        }
+                                    Toast toast = Toast.makeText(context, text,
+                                            duration);
+                                    toast.setGravity(Gravity.CENTER, 0, 0);
+                                    toast.show();
+                                }
 
-                        barcode.setText("");
+                                barcode.setText("");
 
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
 
         // show it
         alertDialog.show();
+    }
+
+    public void handleAutosave() {
+        if (this.autosave != null) {
+            currentlyRestoringAutosave = true;
+            handleAutosaveSenateTags();
+            /*
+             * System.out.println("Autosave Activity:" +
+             * this.autosave.getNaactivity());
+             */
+
+            if (!this.autosave.getNaactivity().equalsIgnoreCase(className)) {
+                // System.out.println("Autosave continue to ver Summary");
+                continueButton(null);
+            }
+        }
+        currentlyRestoringAutosave = false;
+    }
+
+    public void handleAutosaveSenateTags() {
+        ArrayList<InvItem> savedSenateTags = new ArrayList();
+        if (this.autosave != null && this.autosave.getNuxractivity() > -1) {
+            Cursor cursor = MenuActivity.invSaveDB
+                    .rawQuery(
+                            "SELECT a.nusenate, a.cdcond, a.decommodityf, a.cdlocat, a.cdloctype, a.cdcategory, a.cdcommodity, a.decomments FROM ad12verinv a WHERE a.nuxractivity = ?",
+                            new String[] { String.valueOf(this.autosave
+                                    .getNuxractivity()) });
+            // Cursor cursor =
+            // this.invSaveDB.rawQuery("SELECT a.nuxractivity, a.naactivity, a.nuxracttype, a.dttxnorigin, a.dttxnupdate, b.deacttype FROM AM12ACTIVITY a, AL112ACTTYPE b WHERE a.natxnorguser = ? AND a.nuxracttype = b.nuxracttype",
+            // new String[]{LoginActivity.nauser});
+            // looping through all rows and adding to list
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    // System.out.println("DETAIL RECORD");
+                    // System.out.println("..........COLUMN1:"
+                    // + cursor.getString(0));
+                    InvItem curInvItem = new InvItem();
+                    curInvItem.setNusenate(cursor.getString(0));
+                    curInvItem.setType(cursor.getString(1));
+                    curInvItem.setDecommodityf(cursor.getString(2));
+                    curInvItem.setCdlocat(cursor.getString(3));
+                    String cdloctype = cursor.getString(4);
+                    curInvItem.setCdloctype(cdloctype);
+                    curInvItem.setCdcategory(cursor.getString(5));
+                    curInvItem.setCdcommodity(cursor.getString(6));
+                    curInvItem.setDecomments(cursor.getString(7));
+                    System.out
+                            .println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-pull autoSave "
+                                    + curInvItem.getNusenate()
+                                    + ": "
+                                    + curInvItem.getCdlocat()
+                                    + "-"
+                                    + curInvItem.getCdloctype()
+                                    + " cdloctype:"
+                                    + cdloctype
+                                    + ": TYPE:("
+                                    + curInvItem.getType() + ")");
+
+                    // String nusenateCur = cursor.getString(0);
+                    savedSenateTags.add(curInvItem);
+                    // handleCurrentSenateTag(nusenateCur);
+
+                } while (cursor.moveToNext());
+            }
+
+            if (savedSenateTags != null && savedSenateTags.size() > 0) {
+                restoreSenateTags(savedSenateTags);
+            }
+        }
+    }
+
+    public void restoreSenateTags(ArrayList<InvItem> savedSenateTags) {
+        restoreSenateTags(savedSenateTags, true);
+    }
+
+    public void restoreSenateTags(ArrayList<InvItem> savedSenateTags,
+            boolean checkTimeout) {
+        JSONArray jsArray = new JSONArray(
+                this.getSenateTagList(savedSenateTags));
+
+        BasicNameValuePair nameValuePair = new BasicNameValuePair(
+                "nusenateList", jsArray.toString());
+
+        URL = LoginActivity.properties.get("WEBAPP_BASE_URL").toString();
+        // check network connection
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+
+        System.out.println("savedSenateTags COUNT:" + savedSenateTags.size());
+        if (networkInfo != null && networkInfo.isConnected()) {
+            // fetch data
+            status = "yes";
+            // int barcode= Integer.parseInt(barcode_num);
+            // scannedItems.add(barcode);
+
+            AsyncTask<String, String, String> resr1 = new RequestTask(
+                    nameValuePair).execute(URL + "/ItemDetails");
+
+            try {
+                if (testResNull) { // Testing Purposes Only
+                    resr1 = null;
+                    Log.i("TEST RESNULL", "RES SET TO NULL");
+                }
+
+                res = null;
+                res = resr1.get().trim().toString();
+
+                if (res == null) {
+                    noServerResponse();
+                    return;
+                } else if (checkTimeout
+                        && res.indexOf("Session timed out") > -1) {
+                    startTimeout(ITEMDETAILS_TIMEOUT);
+                    return;
+                }
+
+                JSONArray jsonArray = new JSONArray(res);
+                count = jsonArray.length();
+                // numItems = jsonArray.length();
+
+                // this will populate the lists from the JSON array coming from
+                // server
+
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    // System.out.println("detail record:" + i);
+                    String cdstatus = null;
+                    try {
+                        JSONObject jo = new JSONObject();
+                        jo = jsonArray.getJSONObject(i);
+                        verList vl = new verList();
+                        vl.NUSENATE = jo.getString("nusenate");
+                        vl.CDCATEGORY = jo.getString("cdcategory");
+                        vl.DECOMMODITYF = jo.getString("decommodityf");
+                        vl.CDLOCAT = jo.getString("cdlocatto");
+                        int savedInvItemNum = this.findBarcode(vl.NUSENATE,
+                                savedSenateTags);
+                        InvItem savedInvItem = null;
+
+                        if (savedInvItemNum > -1) {
+                            savedInvItem = savedSenateTags.get(savedInvItemNum);
+                        }
+
+                        try {
+                            vl.CDLOCTYPE = jo.getString("cdloctypeto");
+                        } catch (Exception e) {
+                            vl.CDLOCTYPE = "(N/A)";
+                        }
+
+                        // System.out.println
+                        // ("restoreSenateTags "+vl.NUSENATE+": "+vl.CDLOCAT+"-"+vl.CDLOCTYPE);
+
+                        list.add(vl);
+
+                        // 3/15/13 BH Coded below to use InvItem Objects to
+                        // display
+                        // the list.
+
+                        InvItem invItem = new InvItem(vl.NUSENATE,
+                                vl.CDCATEGORY, jo.getString("type"),
+                                vl.DECOMMODITYF, vl.CDLOCAT);
+                        invItem.setCdloctype(vl.CDLOCTYPE);
+                        invItem.setType(savedInvItem.getType());
+                        // System.out.println("[BEFORE:"+vl.NUSENATE+":"+invItem.getType()+"]");
+
+                        if (cdstatus != null && cdstatus.equalsIgnoreCase("I")) {
+                            // Inactive
+                            invItem.setCdstatus(cdstatus);
+                            invItem.setType("INACTIVE");
+                            // System.out.println("[AFTERA:"+vl.NUSENATE+":"+invItem.getType()+"]");
+                        } else if (vl.CDLOCAT == null || vl.CDLOCTYPE == null) {
+                            invItem.setType("NEW");
+                            // System.out.println("[AFTERB:"+vl.NUSENATE+":"+invItem.getType()+"]");
+                        } else if (vl.CDLOCAT.equalsIgnoreCase(loc_code)
+                                && vl.CDLOCTYPE
+                                        .equalsIgnoreCase(this.cdloctype)) {
+                            invItem.setType("EXISTING");
+                            // System.out.println("[AFTERC:"+vl.NUSENATE+":"+invItem.getType()+"]");
+                        }
+
+                        // String actionNeeded = jo.getString("ACTIONNEEDED");
+
+                        // invList.add(invItem);
+
+                        if (findBarcode(invItem.getNusenate(), this.invList) > -1) {
+                            // System.out.println("&&&&&&&&&&&&&&&&&&&&&REMOVING ITEM");
+                            removeItem(invItem.getNusenate(), true, false);
+                        } else {
+                            // System.out.println("&&&&&&&&&&&&&&&&&&&&&ADDING ITEM");
+                            addItem(invItem);
+                        }
+
+                    } catch (JSONException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+
+                    catch (NullPointerException e) {
+                        // noServerResponse(nusenate);
+                        return;
+                    }
+                }
+                addNewSenateTagsBackIn(savedSenateTags, invList);
+                updateChanges();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void addNewSenateTagsBackIn(ArrayList<InvItem> originalSenateTags,
+            ArrayList<InvItem> senateTagList) {
+        for (int x = 0; x < originalSenateTags.size(); x++) {
+            InvItem currentSenateTag = originalSenateTags.get(x);
+            String nusenate = currentSenateTag.getNusenate();
+            boolean addBackIn = false;
+            // System.out.println("addNewSenateTagsBackIn "+x+":"+currentSenateTag.getNusenate()+" TYPE:"+currentSenateTag.getType());
+            if (currentSenateTag.getType().equalsIgnoreCase("NEW")) {
+                System.out.println("    **** !!NEW");
+                if (nusenate == null || nusenate.trim().length() == 0) {
+                    System.out.println("    **** ADD BACK IN A");
+                    addBackIn = true;
+                } else if (findBarcode(nusenate, senateTagList) == -1) {
+                    System.out.println("    **** ADD BACK IN B");
+                    addBackIn = true;
+                }
+            }
+            if (addBackIn) {
+                // senateTagList.add(currentSenateTag);
+                addItem(currentSenateTag);
+            }
+        }
+    }
+
+    public ArrayList<String> getSenateTagList(ArrayList<InvItem> invItemList) {
+        ArrayList<String> returnList = new ArrayList<String>();
+
+        for (int x = 0; x < invItemList.size(); x++) {
+            InvItem curInvItem = invItemList.get(x);
+            returnList.add(curInvItem.getNusenate());
+        }
+
+        return returnList;
+    }
+
+    public void handleCurrentSenateTag(String nusenate) {
+
+        boolean barcodeFound = false;
+
+        // to delete an element from the list
+        int flag = 0;
+
+        // If the item is already scanned then display a
+        // toaster "Already Scanned"
+        if (findBarcode(nusenate, AllScannedItems) > -1) {
+            // display toaster
+            barcodeFound = true;
+            Context context = getApplicationContext();
+            CharSequence text = "Already Scanned  ";
+            int duration = Toast.LENGTH_SHORT;
+
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
+            barcode.setText("");
+
+            return;
+        }
+        handleItem(nusenate);
     }
 
     public void editKeywordList(View view) {
@@ -603,8 +867,9 @@ public class VerScanActivity extends SenateActivity implements
         newInvDialog = new NewInvDialog(
                 this,
                 "<b>Enter New Senate Inventory Information</b>",
-                "<b><h2>No Senate Tag#"  
-                        + "</h2>Only use this option if you <font color='red'><b>ABSOLUTELY</b></font> do not have a Senate Tag# or replacement Senate Tag#.</b><br />", Gravity.CENTER_HORIZONTAL);
+                "<b><h2>No Senate Tag#"
+                        + "</h2>Only use this option if you <font color='red'><b>ABSOLUTELY</b></font> do not have a Senate Tag# or replacement Senate Tag#.</b><br />",
+                Gravity.CENTER_HORIZONTAL);
         newInvDialog.addListener(this);
         newInvDialog.setRetainInstance(true);
         newInvDialog.show(fragmentManager, "newInvDialog");
@@ -625,57 +890,64 @@ public class VerScanActivity extends SenateActivity implements
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 
         // set title
-        alertDialogBuilder.setTitle(Html.fromHtml("<font color='#000055'><b>***WARNING: Senate Tag#: "+nusenate+" DOES NOT EXIST</b> in the SFMS Tracking System. </font>"));
+        alertDialogBuilder
+                .setTitle(Html
+                        .fromHtml("<font color='#000055'><b>***WARNING: Senate Tag#: "
+                                + nusenate
+                                + " DOES NOT EXIST</b> in the SFMS Tracking System. </font>"));
 
         // set dialog message
-        alertDialogBuilder.setMessage(Html.fromHtml("The item <b>cannot</b> be tagged to current location at this time. You may Save the Tag# and item information as a Verification Exception.<br /><br /><b>Save New Tag# and item Information?</b>"))
+        alertDialogBuilder
+                .setMessage(
+                        Html.fromHtml("The item <b>cannot</b> be tagged to current location at this time. You may Save the Tag# and item information as a Verification Exception.<br /><br /><b>Save New Tag# and item Information?</b>"))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        /*
-                         * if this button is clicked, open the dialog
-                         * to allow entry for the new nusenate#
-                         */                        
-                        getNewNusenateInfo(nusenate);
-                    }
-                })
-                .setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        /*
-                         *  if this button is clicked, just close
-                         *  the dialog box and do nothing
-                         */
-                        dialog.dismiss();
-                    }
-                });
+                .setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                /*
+                                 * if this button is clicked, open the dialog to
+                                 * allow entry for the new nusenate#
+                                 */
+                                getNewNusenateInfo(nusenate);
+                            }
+                        })
+                .setNegativeButton(Html.fromHtml("<b>No</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                /*
+                                 * if this button is clicked, just close the
+                                 * dialog box and do nothing
+                                 */
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
 
         // show it
         alertDialog.show();
-        
-
         // newInvDialog.getDialog().setCanceledOnTouchOutside(false);
     }
-    
+
     public void getNewNusenateInfo(final String nusenate) {
         senateTagNum = true;
         holdNusenate = nusenate;
         newInvDialog = new NewInvDialog(
                 this,
                 "<b>Enter New Senate Inventory Information</b>",
-                "<b><h2>Senate Tag#: " + nusenate 
-                        + "</h2><font color='red'>(Does not exist in SFMS Tracking System)</font></b><br />", Gravity.CENTER_HORIZONTAL);
+                "<b><h2>Senate Tag#: "
+                        + nusenate
+                        + "</h2><font color='red'>(Does not exist in SFMS Tracking System)</font></b><br />",
+                Gravity.CENTER_HORIZONTAL);
         newInvDialog.addListener(this);
         newInvDialog.setRetainInstance(true);
         newInvDialog.show(fragmentManager, "fragment_name");
     }
-    
 
     public void errorMessage(final String barcode_num, final String title,
             final String message) {
@@ -688,29 +960,32 @@ public class VerScanActivity extends SenateActivity implements
                 + title + "</font>"));
 
         // set dialog message
-        alertDialogBuilder.setMessage(Html.fromHtml(message))
+        alertDialogBuilder
+                .setMessage(Html.fromHtml(message))
                 .setCancelable(false)
-                .setPositiveButton(Html.fromHtml("<b>Ok</b>"), new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        // if this button is clicked, just close
-                        // the dialog box and do nothing
-                        Context context = getApplicationContext();
+                .setPositiveButton(Html.fromHtml("<b>Ok</b>"),
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                // if this button is clicked, just close
+                                // the dialog box and do nothing
+                                Context context = getApplicationContext();
 
-                        CharSequence text = "Senate Tag#: " + barcode_num
-                                + " was NOT added";
-                        int duration = Toast.LENGTH_SHORT;
+                                CharSequence text = "Senate Tag#: "
+                                        + barcode_num + " was NOT added";
+                                int duration = Toast.LENGTH_SHORT;
 
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
+                                Toast toast = Toast.makeText(context, text,
+                                        duration);
+                                toast.setGravity(Gravity.CENTER, 0, 0);
+                                toast.show();
 
-                        barcode.setText("");
+                                barcode.setText("");
 
-                        dialog.dismiss();
-                    }
-                });
+                                dialog.dismiss();
+                            }
+                        });
 
         // create alert dialog
         AlertDialog alertDialog = alertDialogBuilder.create();
@@ -763,9 +1038,11 @@ public class VerScanActivity extends SenateActivity implements
                     noServerResponse();
                     return;
                 }
+
                 if (this.testResNull) { // Testing Purposes Only
                     resr1 = null;
                 }
+
                 String jsonString = resr1.get().trim().toString();
                 if (this.testResNull) { // Testing Purposes Only
                     res = null;
@@ -784,15 +1061,15 @@ public class VerScanActivity extends SenateActivity implements
                     jo = jsonArray.getJSONObject(i);
                     verList vl = new verList();
                     vl.NUSENATE = jo.getString("NUSENATE");
-                    vl.CDCATEGORY = jo.getString("CDCATEGORY");
                     vl.DECOMMODITYF = jo.getString("DECOMMODITYF");
                     vl.CDLOCAT = jo.getString("CDLOCATTO");
                     try {
                         vl.CDLOCTYPE = jo.getString("CDLOCTYPETO");
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         vl.CDLOCTYPE = "(N/A)";
                     }
+
+                    // System.out.println("*****List: "+vl.NUSENATE+": "+vl.CDLOCAT+"-"+vl.CDLOCTYPE);
 
                     list.add(vl);
                     StringBuilder s = new StringBuilder();
@@ -806,6 +1083,7 @@ public class VerScanActivity extends SenateActivity implements
                     // the list.
                     InvItem invItem = new InvItem(vl.NUSENATE, vl.CDCATEGORY,
                             "EXISTING", vl.DECOMMODITYF, vl.CDLOCAT);
+                    invItem.setCdloctype(vl.CDLOCTYPE);
                     invList.add(invItem);
                 }
                 // code for JSON ends
@@ -851,6 +1129,11 @@ public class VerScanActivity extends SenateActivity implements
     }
 
     public int removeItem(String nusenate, boolean resumeFromTimeout) {
+        return removeItem(nusenate, resumeFromTimeout, true);
+    }
+
+    public int removeItem(String nusenate, boolean resumeFromTimeout,
+            boolean tellUser) {
         currentState = REMOVEITEM_STATE;
         int foundAt = -1;
         for (int i = invList.size() - 1; i > -1; i--) {
@@ -892,22 +1175,24 @@ public class VerScanActivity extends SenateActivity implements
                  * " AFTER REMOVE BARCODE INVLIST SIZE:" + invList.size());
                  */
 
-                // display toster
-                Context context = getApplicationContext();
-                StringBuilder sb = new StringBuilder();
-                sb.append("REMOVED: ");
-                sb.append(curInvItem.getNusenate());
-                //sb.append(" ");
-                //sb.append(curInvItem.getType());
-                sb.append(": ");
-                sb.append(curInvItem.getDecommodityf());
+                // display toaster
+                if (tellUser) {
+                    Context context = getApplicationContext();
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("REMOVED: ");
+                    sb.append(curInvItem.getNusenate());
+                    // sb.append(" ");
+                    // sb.append(curInvItem.getType());
+                    sb.append(": ");
+                    sb.append(curInvItem.getDecommodityf());
 
-                CharSequence text = sb.toString();
-                int duration = Toast.LENGTH_SHORT;
+                    CharSequence text = sb.toString();
+                    int duration = Toast.LENGTH_SHORT;
 
-                Toast toast = Toast.makeText(context, text, duration);
-                toast.setGravity(Gravity.CENTER, 0, 0);
-                toast.show();
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.setGravity(Gravity.CENTER, 0, 0);
+                    toast.show();
+                }
                 AllScannedItems.add(curInvItem);// to keep track of
                                                 // (number+details)
                                                 // for summary
@@ -921,39 +1206,13 @@ public class VerScanActivity extends SenateActivity implements
                                              // numbers for
                                              // oracle table
                 cntScanned++;
-                playSound(R.raw.ok);
+                autoSaveItem(curInvItem);
+                if (tellUser) {
+                    playSound(R.raw.ok);
+                }
                 // Simply contact the Web Server to keep the Session
                 // Alive, to help minimize
                 // issues with Session Timeouts
-                try {
-                    StringBuffer values = new StringBuffer();
-                    values.append(curInvItem.getNusenate());
-                    values.append("|");
-                    values.append(curInvItem.getType());
-                    values.append("|");
-                    values.append(curInvItem.getCdcategory());
-                    values.append("|");
-                    values.append(curInvItem.getCdintransit());
-                    values.append("|");
-                    values.append("-1");
-                    values.append("|");
-                    values.append(curInvItem.getDecommodityf());
-                    values.append("|");
-                    values.append(curInvItem.getCdlocat());
-                    values.append("|now|");
-                    values.append(LoginActivity.nauser);
-                    values.append("|now|");
-                    values.append(LoginActivity.nauser);
-
-                    long rowsInserted = MenuActivity.db
-                            .insert("ad12verinv",
-                                    "nusenate|cdcond|cdcategory|cdintransit|nuxrpickup|decommodityf|cdlocatfrm|dttxnorigin|natxnorguser|dttxnupdate|natxnupduser",
-                                    values.toString());
-
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
 
                 foundAt = i;
                 if (!keepAlive()) {
@@ -978,6 +1237,7 @@ public class VerScanActivity extends SenateActivity implements
         AllScannedItems.add(newInvItem);
         newItems.add(newInvItem); // to keep track of (number+details)
                                   // for summary
+        autoSaveItem(newInvItem);
 
         StringBuilder s_new = new StringBuilder();
         // s_new.append(vl.NUSENATE); since the desc coming from
@@ -1006,6 +1266,40 @@ public class VerScanActivity extends SenateActivity implements
         currentState = NONE;
         // Clear Barcode after all actions are done
         barcode.setText("");
+    }
+
+    public int addItem(InvItem invItem) {
+        // System.out.println("addItem for Autosave: "+invItem.getNusenate()+"("+invItem.getType()+":"+invItem.getCdstatus()+")");
+        if (invItem.getNusenate() == null
+                || invItem.getNusenate().trim().length() == 0
+                || invItem.getType().equalsIgnoreCase("NEW")) {
+            invItem.setDecommodityf(" ***NOT IN SFMS***  New Item");
+            invItem.setType("NEW");
+        } else if (invItem.getCdstatus().equalsIgnoreCase("I")
+                || invItem.getType().equalsIgnoreCase("INACTIVE")) {
+            invItem.setType("INACTIVE");
+        } else {
+            // Log.i("TESTING",
+            // "nusenateReturned was not null LENGTH:"+nusenateReturned.length());
+            invItem.setDecommodityf(invItem.getDecommodityf()
+                    + " \n***Found in: " + invItem.getCdlocat() + "-"
+                    + invItem.getCdloctype());
+            invItem.setType("DIFFERENT LOCATION");
+        }
+
+        invList.add(invItem);
+        cntScanned++;
+
+        scannedItems.add(invItem);
+        AllScannedItems.add(invItem);
+        newItems.add(invItem); // to keep track of (number+details)
+                               // for summary
+        this.updateChanges();
+        // System.out.println
+        // ("=========================ADDING ITEM FOR AUTOSAVE "+invItem.getNusenate());
+        this.autoSaveItem(invItem);
+
+        return OK;
     }
 
     public int addItem(String nusenate) {
@@ -1046,10 +1340,10 @@ public class VerScanActivity extends SenateActivity implements
                 vl.CDSTATUS = jo.getString("cdstatus");
                 try {
                     vl.CDLOCTYPE = jo.getString("cdloctypeto");
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     vl.CDLOCTYPE = "(N/A)";
                 }
+
                 nusenateReturned = jo.getString("nusenate");
 
                 if (nusenateReturned == null) {
@@ -1077,7 +1371,8 @@ public class VerScanActivity extends SenateActivity implements
                     // Log.i("TESTING",
                     // "nusenateReturned was not null LENGTH:"+nusenateReturned.length());
                     vl.DECOMMODITYF = jo.getString("decommodityf")
-                            + " \n***Found in: " + vl.CDLOCAT + "-" + vl.CDLOCTYPE;
+                            + " \n***Found in: " + vl.CDLOCAT + "-"
+                            + vl.CDLOCTYPE;
                     vl.CONDITION = "DIFFERENT LOCATION";
                     playSound(R.raw.warning);
                 }
@@ -1114,12 +1409,47 @@ public class VerScanActivity extends SenateActivity implements
                 newItems.add(invItem); // to keep track of (number+details)
                                        // for summary
                 currentState = NONE;
+                this.autoSaveItem(invItem);
 
                 return OK;
             } catch (JSONException e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
                 return EXCEPTION_IN_CODE;
+            }
+        }
+    }
+
+    public void autoSaveItem(InvItem curInvItem) {
+        if (!this.currentlyRestoringAutosave) {
+            try {
+                ContentValues values = new ContentValues();
+                values.put("nusenate", curInvItem.getNusenate());
+                values.put("nuxractivity",
+                        Integer.parseInt(Verification.nuxractivity));
+                values.put("cdcond", curInvItem.getType());
+                values.put("cdcategory", curInvItem.getCdcategory());
+                values.put("cdintransit", curInvItem.getCdintransit());
+                values.put("decommodityf", curInvItem.getDecommodityf());
+                values.put("cdlocat", curInvItem.getCdlocat());
+                values.put("cdloctype", curInvItem.getCdloctype());
+                values.put("cdcommodity", curInvItem.getCdcommodity());
+                values.put("decomments", curInvItem.getDecomments());
+                System.out.println("Autosaving " + curInvItem.getNusenate()
+                        + ": " + curInvItem.getCdlocat() + "-"
+                        + curInvItem.getCdloctype() + " COND:"
+                        + curInvItem.getType());
+                values.put("dttxnorigin", MenuActivity.invSaveDB.getNow());
+                values.put("natxnorguser", LoginActivity.nauser);
+                values.put("dttxnupdate", MenuActivity.invSaveDB.getNow());
+                values.put("natxnupduser", LoginActivity.nauser);
+
+                long rowsInserted = MenuActivity.invSaveDB.insert("ad12verinv",
+                        values);
+
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
         }
     }
@@ -1221,7 +1551,6 @@ public class VerScanActivity extends SenateActivity implements
                     curCommodity.setNuxrefco(jo.getString("nuxrefco"));
 
                     commodityList.add(curCommodity);
-
                 }
 
                 // code for JSON ends
@@ -1247,7 +1576,6 @@ public class VerScanActivity extends SenateActivity implements
                 R.layout.commoditylist_row, commodityList,
                 handleKeywords(NewInvDialog.tvKeywordsToBlock.getText()
                         .toString()));
-
         /*
          * if (commodityAdapter==null) { Log.i("getCommodityList",
          * "****commodityAdapter is null"); } else { Log.i("getCommodityList",
@@ -1367,14 +1695,14 @@ public class VerScanActivity extends SenateActivity implements
                 + cntExisting));
         tv_counts_scanned.setText(Html.fromHtml("<b>Scanned</b><br />"
                 + cntScanned));
-        Log.i("check", "listview updated");
+        // Log.i("check", "listview updated");
     }
 
-    public void handleItem() {
-        handleItem(false); // Default is to not resume from a timeout
+    public void handleItem(String nusenate) {
+        handleItem(false, nusenate); // Default is to not resume from a timeout
     }
 
-    public void handleItem(boolean resumeFromTimeout) {
+    public void handleItem(boolean resumeFromTimeout, String nusenate) {
         // TODO resumeFromTimeout Code
 
         /*
@@ -1382,8 +1710,6 @@ public class VerScanActivity extends SenateActivity implements
          * resumeFromTimeout + ")  " + barcode.getText() + " (" +
          * barcode.getText().length() + ")");
          */
-
-        String nusenate = barcode.getText().toString().trim();
 
         if (resumeFromTimeout) {
             if (currentState == NONE) {
@@ -1397,10 +1723,16 @@ public class VerScanActivity extends SenateActivity implements
 
         boolean barcodeFound = false;
         // Try to remove an item from the list....
+
         int invItemIndex = -1;
+
+        // WE ARE HERE
+
         if (!resumeFromTimeout
                 || (currentState == NONE || currentState == REMOVEITEM_STATE)) {
             Log.i("TESTING", "Removing item " + nusenate);
+            System.out
+                    .println("$$$$$$$$$$$$$$$$$$$$$REMOVING ITEM:" + nusenate);
             invItemIndex = removeItem(nusenate, resumeFromTimeout);
         }
 
@@ -1408,6 +1740,7 @@ public class VerScanActivity extends SenateActivity implements
                 || invItemIndex == -1) { // Item not found, so Add Item to list
             // Log.i("TESTING", "Adding item " + nusenate);
             int addItemResults = -1;
+            System.out.println("$$$$$$$$$$$$$$$$$$$$$ADDING ITEM:" + nusenate);
             addItemResults = addItem(nusenate);
             if (addItemResults == SERVER_SESSION_TIMED_OUT) {
                 return;
@@ -1429,8 +1762,9 @@ public class VerScanActivity extends SenateActivity implements
     }
 
     public void continueButton(View view) {
+        // Log.i("VerScanActivity", "continueButton start");
         if (checkServerResponse(true) == OK) {
-            Log.i("VerScanActivity", "continueButton 1");
+            // Log.i("VerScanActivity", "continueButton 1");
             btnVerListCont.getBackground().setAlpha(45);
 
             // create lists for summary activity
@@ -1461,11 +1795,18 @@ public class VerScanActivity extends SenateActivity implements
                     + AllScannedItems.size() + "\",\"numissitems\":\""
                     + missingItems.size() + "\",\"nunewitems\":\""
                     + newItems.size() + "\"}";
+            /*
+             * Log.i("VerScanActivity",
+             * "continueButton calling VerSummaryActivity");
+             */
 
             Intent intent = new Intent(this, VerSummaryActivity.class);
             intent.putExtra("loc_code", loc_code);
             intent.putExtra("cdloctype", cdloctype);
             intent.putExtra("summary", summary);
+            if (autosave != null) {
+                intent.putExtra("autosave", autosave);
+            }
             /*
              * intent.putStringArrayListExtra("scannedBarcodeNumbers",
              * getJSONArrayList(scannedItems));
@@ -1580,7 +1921,6 @@ public class VerScanActivity extends SenateActivity implements
         public void onNothingSelected(AdapterView<?> arg0) {
             // TODO Auto-generated method stub
         }
-
     }
 
     public class verList
@@ -1609,6 +1949,7 @@ public class VerScanActivity extends SenateActivity implements
 
             newInvItem.setCdcategory(commoditySelected.getCdcategory());
             newInvItem.setCdlocat(tvCdlocat.getText().toString());
+            newInvItem.setCdloctype(cdloctype);
             newInvItem.setType("NEW");
             newInvItem.setCdcommodity(commoditySelected.getCdcommodty());
 
@@ -1628,6 +1969,7 @@ public class VerScanActivity extends SenateActivity implements
                     commoditySelected.getDecommodityf()).toString());
             newInvItem.setDecomments(commoditySelected.getDecomments());
             addNewItem(newInvItem);
+            autoSaveItem(newInvItem);
             // Log.i("commoditySelected",
             // "NEW INV ITEM COMMENTS:"+newInvItem.getDecomments());
 
@@ -1662,6 +2004,7 @@ public class VerScanActivity extends SenateActivity implements
         scannedItems.add(inactiveInvItem);
         AllScannedItems.add(inactiveInvItem);
         newItems.add(inactiveInvItem); // to keep track of (number+details)
+        autoSaveItem(inactiveInvItem);
         // for summary
         adapter = new InvListViewAdapter(VerScanActivity.this,
                 R.layout.invlist_item, invList);

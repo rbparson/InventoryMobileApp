@@ -85,8 +85,8 @@ public class PickupGroupViewAdapter extends ArrayAdapter<PickupGroup>
         }
 
         try {
-            String address = currentPickupGroup.getPickupLocat()
-                    + " - " + currentPickupGroup.getPickupAdstreet1() + ", "
+            String address = currentPickupGroup.getPickupLocat() + " - "
+                    + currentPickupGroup.getPickupAdstreet1() + ", "
                     + currentPickupGroup.getPickupAdcity() + ", "
                     + currentPickupGroup.getPickupAdstate() + " "
                     + currentPickupGroup.getPickupAdzipcode();

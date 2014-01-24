@@ -32,8 +32,8 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-
-public class CancelPickup extends SenateActivity {
+public class CancelPickup extends SenateActivity
+{
 
     private Transaction pickup;
 
@@ -52,15 +52,22 @@ public class CancelPickup extends SenateActivity {
         TextView commentsTitle = (TextView) findViewById(R.id.cancel_pickup_comments_title);
         ListView items = (ListView) findViewById(R.id.cancel_pickup_listview);
 
-        pickup = TransactionParser.parseTransaction(getIntent().getStringExtra("pickup"));
+        pickup = TransactionParser.parseTransaction(getIntent().getStringExtra(
+                "pickup"));
 
         String date = getIntent().getStringExtra("date");
 
-        Adapter pickupListAdapter = new InvListViewAdapter(this, R.layout.invlist_item, pickup.getPickupItems());
+        Adapter pickupListAdapter = new InvListViewAdapter(this,
+                R.layout.invlist_item, pickup.getPickupItems());
         items.setAdapter((ListAdapter) pickupListAdapter);
 
-        oldPickupLocation.setText(Html.fromHtml(pickup.getOrigin().getLocationSummaryStringRemoteAppended()));
-        oldDeliveryLocation.setText(Html.fromHtml(pickup.getDestination().getLocationSummaryStringRemoteAppended()));
+        if (pickup.isRemote()) {
+            oldPickupLocation.setText(Html.fromHtml(pickup.getOrigin().getLocationSummaryStringRemoteAppended()));
+            oldDeliveryLocation.setText(Html.fromHtml(pickup.getDestination().getLocationSummaryStringRemoteAppended()));
+        } else {
+            oldPickupLocation.setText(pickup.getOrigin().getLocationSummaryString());
+            oldDeliveryLocation.setText(pickup.getDestination().getLocationSummaryString());
+        }
         oldPickupBy.setText(pickup.getNapickupby());
         oldCount.setText(Integer.toString(pickup.getPickupItems().size()));
         SimpleDateFormat sdf = ((InvApplication)getApplicationContext()).getSdf();
@@ -77,24 +84,31 @@ public class CancelPickup extends SenateActivity {
         if (checkServerResponse(true) == OK) {
             AlertDialog.Builder confirmDialog = new AlertDialog.Builder(this);
             confirmDialog.setCancelable(false);
-            confirmDialog.setTitle(Html.fromHtml("<font color='#000055'>Cancel Pickup</font>"));
-            confirmDialog.setMessage(Html.fromHtml("You are about to <b>cancel</b> this pickup.<br><br>"
-                    + "Are you sure you want to continue?"));
-            confirmDialog.setNegativeButton(Html.fromHtml("<b>No</b>"), new DialogInterface.OnClickListener() {
-                
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    return;
-                }
-            });
-            confirmDialog.setPositiveButton(Html.fromHtml("<b>Yes</b>"), new DialogInterface.OnClickListener() {
-                
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                    new CancelPickupTask().execute();
-                }
-            });
+            confirmDialog.setTitle(Html
+                    .fromHtml("<font color='#000055'>Cancel Pickup</font>"));
+            confirmDialog
+                    .setMessage(Html
+                            .fromHtml("You are about to <b>cancel</b> this pickup.<br><br>"
+                                    + "Are you sure you want to continue?"));
+            confirmDialog.setNegativeButton(Html.fromHtml("<b>No</b>"),
+                    new DialogInterface.OnClickListener()
+                    {
+
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            return;
+                        }
+                    });
+            confirmDialog.setPositiveButton(Html.fromHtml("<b>Yes</b>"),
+                    new DialogInterface.OnClickListener()
+                    {
+
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            new CancelPickupTask().execute();
+                        }
+                    });
             confirmDialog.show();
         }
     }
@@ -105,7 +119,8 @@ public class CancelPickup extends SenateActivity {
         }
     }
 
-    private class CancelPickupTask extends AsyncTask<Void, Void, Integer> {
+    private class CancelPickupTask extends AsyncTask<Void, Void, Integer>
+    {
 
         ProgressBar progressBar;
 
