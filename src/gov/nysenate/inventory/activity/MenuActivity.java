@@ -116,7 +116,7 @@ public class MenuActivity extends SenateActivity implements
                     .rawQuery(
                               " SELECT a.nuxractivity, a.naactivity, a.nuxracttype, a.dttxnorigin, a.dttxnupdate, b.deacttype, c.cdlocat, c.cdloctype, c.cdrespctrhd, c.adstreet1, c.adcity, c.adstate, c.adzipcode, c.descript, c.locationEntry, c.locationToEntry FROM AM12ACTIVITY a, AL112ACTTYPE b, AM12VERIFY c  WHERE a.natxnorguser = ? AND a.nuxracttype = b.nuxracttype AND c.nuxractivity = a.nuxractivity"
                             + " UNION"
-                            + " SELECT a.nuxractivity, a.naactivity, a.nuxracttype, a.dttxnorigin, a.dttxnupdate, b.deacttype, c.cdlocatto, c.cdloctypeto, c.cdrespctrhdto, c.adstreet1to, c.adcityto, c.adstateto, c.adzipcodeto, c.descriptfrom, c.locationtoEntry, c.locationToEntry FROM AM12ACTIVITY a, AL112ACTTYPE b, AM12PICKUP c  WHERE a.natxnorguser = ? AND a.nuxracttype = b.nuxracttype AND c.nuxractivity = a.nuxractivity"
+                            + " SELECT a.nuxractivity, a.naactivity, a.nuxracttype, a.dttxnorigin, a.dttxnupdate, b.deacttype, c.cdlocatto, c.cdloctypeto, c.cdrespctrhdto, c.adstreet1to, c.adcityto, c.adstateto, c.adzipcodeto, c.descriptfrom, c.locationFromEntry, c.locationToEntry FROM AM12ACTIVITY a, AL112ACTTYPE b, AM12PICKUP c  WHERE a.natxnorguser = ? AND a.nuxracttype = b.nuxracttype AND c.nuxractivity = a.nuxractivity"
                             ,
                             new String[] { LoginActivity.nauser, LoginActivity.nauser });
             // Cursor cursor =

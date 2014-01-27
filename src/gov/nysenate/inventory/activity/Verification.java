@@ -7,9 +7,12 @@ import gov.nysenate.inventory.android.R.anim;
 import gov.nysenate.inventory.android.R.id;
 import gov.nysenate.inventory.android.R.layout;
 import gov.nysenate.inventory.android.R.menu;
+import gov.nysenate.inventory.model.Location;
+import gov.nysenate.inventory.util.TransactionParser;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -87,6 +90,8 @@ public class Verification extends SenateActivity
     String URL = "";
 
     public static ProgressBar progBarVerify;
+    
+    private List<Location> locations;    
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -532,11 +537,17 @@ public class Verification extends SenateActivity
                 // code for JSON
 
                 String jsonString = resr1.get().trim().toString();
-                JSONArray jsonArray = new JSONArray(jsonString);
+
+                locations = TransactionParser.parseMultipleLocations(res);
+                for (Location loc: locations) {
+                    locCodeList.add(loc.getLocationSummaryString());
+                }
+                
+                /*                JSONArray jsonArray = new JSONArray(jsonString);
 
                 for (int i = 0; i < jsonArray.length(); i++) {
                     locCodeList.add(jsonArray.getString(i).toString());
-                }
+                }*/
                 Collections.sort(locCodeList);
                 // System.out.println("**********LOCATION CODES COUNT:"
                 // + locCodeList.size());
@@ -553,9 +564,6 @@ public class Verification extends SenateActivity
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             } catch (ExecutionException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (JSONException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }

@@ -430,6 +430,9 @@ public class Pickup1 extends SenateActivity
                 destination = locations.get(allLocations.indexOf(currentToLocation));
                 intent.putExtra("origin", origin);
                 intent.putExtra("destination", destination);
+                if (autosave != null) {
+                    intent.putExtra("autosave", autosave);
+                }
                 startActivity(intent);
                 overridePendingTransition(R.anim.in_right, R.anim.out_left);
             }

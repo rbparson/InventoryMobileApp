@@ -250,6 +250,7 @@ public class Pickup2Activity extends SenateActivity
             // this.invSaveDB.rawQuery("SELECT a.nuxractivity, a.naactivity, a.nuxracttype, a.dttxnorigin, a.dttxnupdate, b.deacttype FROM AM12ACTIVITY a, AL112ACTTYPE b WHERE a.natxnorguser = ? AND a.nuxracttype = b.nuxracttype",
             // new String[]{LoginActivity.nauser});
             // looping through all rows and adding to list
+            System.out.println ("handleAutosaveSenateTags");
             if (cursor != null && cursor.moveToFirst()) {
                 do {
                     // System.out.println("DETAIL RECORD");
@@ -266,7 +267,7 @@ public class Pickup2Activity extends SenateActivity
                     curInvItem.setCdcommodity(cursor.getString(6));
                     curInvItem.setDecomments(cursor.getString(7));
                     System.out
-                            .println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-pull autoSave "
+                            .println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- handleAutosaveSenateTags pull autoSave "
                                     + curInvItem.getNusenate()
                                     + ": "
                                     + curInvItem.getCdlocat()
@@ -303,6 +304,7 @@ public class Pickup2Activity extends SenateActivity
         BasicNameValuePair nameValuePair = new BasicNameValuePair(
                 "nusenateList", jsArray.toString());
 
+        System.out.println ("restoreSenateTags Before URL");
         URL = LoginActivity.properties.get("WEBAPP_BASE_URL").toString();
         // check network connection
         ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -343,6 +345,8 @@ public class Pickup2Activity extends SenateActivity
                     startTimeout(ITEMDETAILS_TIMEOUT);
                     return;
                 }
+                
+                System.out.println ("*********************restoreSenateTags RES:"+res);
 
                 JSONArray jsonArray = new JSONArray(res);
                 count = jsonArray.length();
