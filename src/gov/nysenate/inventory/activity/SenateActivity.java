@@ -412,10 +412,16 @@ public abstract class SenateActivity extends Activity implements
         checkInternetConnection();
         timer.cancel();
         if (!this.getClass().getSimpleName().equalsIgnoreCase("LoginActivity")) {
-/*            Date dtNow = new Date();
+           Date dtNow = new Date();
+           
+           if (timeoutTimerStart == null)
+        	   timeoutTimerStart = new Date();
+           
             if (this.timeoutTimerStart != null
                     && dtNow.getTime() >= this.timeoutTimerStart.getTime()
                             + (long) (timeoutTimerMinutes * 60 * 1000)) {
+            	
+            	
                 System.out
                         .println("Timeout already Expired "
                                 + ((dtNow.getTime() - (this.timeoutTimerStart
@@ -424,13 +430,15 @@ public abstract class SenateActivity extends Activity implements
                 inactivityTimeout();
             } else {
                 if (this.timeoutTimerStart != null) {
+                	
+                	
                     System.out
                             .println("onResume Timeout set to "
                                     + (this.timeoutTimerStart.getTime() + (long) (timeoutTimerMinutes * 60 * 1000) / 1000));
                     timer = null;
                     timer = new CountDownTimer(
-                            (dtNow.getTime() - (this.timeoutTimerStart
-                                    .getTime() + (long) (timeoutTimerMinutes * 60 * 1000))),
+                            ((this.timeoutTimerStart
+                                    .getTime() + (long) (timeoutTimerMinutes * 60 * 1000)) - dtNow.getTime()),
                             1000)
                     {
 
@@ -453,8 +461,8 @@ public abstract class SenateActivity extends Activity implements
                     };
                 }
                 System.gc();
-                timer.start();
-            }*/
+                //timer.start();
+            }
             timer.start();
         }
     }
