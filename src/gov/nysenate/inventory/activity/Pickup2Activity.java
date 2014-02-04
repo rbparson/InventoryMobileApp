@@ -354,32 +354,51 @@ public class Pickup2Activity extends SenateActivity
 
                 // this will populate the lists from the JSON array coming from
                 // server
-
+                System.out.println ("*********************restoreSenateTags COUNT:"+count);
                 for (int i = 0; i < jsonArray.length(); i++) {
-                    // System.out.println("detail record:" + i);
+                   System.out.println("restoreSenateTags detail record:" + i);
                     String cdstatus = null;
                     try {
                         JSONObject jo = new JSONObject();
                         jo = jsonArray.getJSONObject(i);
+                        
 
                         vl.NUSENATE = jo.getString("nusenate");
+                        System.out.println("restoreSenateTags detail record:" + i+" Senate Tag#:"+vl.NUSENATE);
                         vl.CDCATEGORY = jo.getString("cdcategory");
                         vl.DECOMMODITYF = jo.getString("decommodityf");
                         vl.CDLOCAT = jo.getString("cdlocatto");
+                        System.out.println("restoreSenateTags detail record:" + i+"(A1) Senate Tag#:"+vl.NUSENATE);
 
                         vl.CDCATEGORY = jo.getString("cdcategory");
                         vl.DECOMMODITYF = jo.getString("decommodityf")
                                 .replaceAll("&#34;", "\"");
+                        System.out.println("restoreSenateTags detail record:" + i+"(A5) Senate Tag#:"+vl.NUSENATE);
                         vl.CDLOCATTO = jo.getString("cdlocatto");
                         vl.CDLOCTYPETO = jo.getString("cdloctypeto");
                         vl.ADSTREET1 = jo.getString("adstreet1to").replaceAll(
                                 "&#34;", "\"");
+                        System.out.println("restoreSenateTags detail record:" + i+"(A10) Senate Tag#:"+vl.NUSENATE);
                         vl.DTISSUE = jo.getString("dtissue");
                         vl.CDLOCAT = jo.getString("cdlocatto");
                         vl.CDINTRANSIT = jo.getString("cdintransit");
                         vl.CDSTATUS = jo.getString("cdstatus");
+                        System.out.println("restoreSenateTags detail record:" + i+"(A15) Senate Tag#:"+vl.NUSENATE);
 
-                        InvItem savedInvItem = null;
+                        if (origin.getCdlocat().equalsIgnoreCase(vl.CDLOCAT)) {
+                            vl.CONDITION = "EXISTING";
+                        } else if (destination.getCdlocat().equalsIgnoreCase(
+                                vl.CDLOCAT)) {
+                            vl.DECOMMODITYF = vl.DECOMMODITYF + "\n**Already in: "
+                                    + vl.CDLOCAT;
+                        } else {
+                            vl.CONDITION = "DIFFERENT LOCATION";
+                            vl.DECOMMODITYF = vl.DECOMMODITYF + "\n**Found in: "
+                                    + vl.CDLOCAT;
+                        }
+                        
+                        
+                        //InvItem savedInvItem = null;
 
                         // System.out.println
                         // ("restoreSenateTags "+vl.NUSENATE+": "+vl.CDLOCAT+"-"+vl.CDLOCTYPE);
@@ -388,12 +407,13 @@ public class Pickup2Activity extends SenateActivity
                         // display
                         // the list.
 
-                        InvItem invItem = new InvItem(vl.NUSENATE,
+                        System.out.println("restoreSenateTags detail record:" + i+"(A12) Senate Tag#:"+vl.NUSENATE);
+                       InvItem invItem = new InvItem(vl.NUSENATE,
                                 vl.CDCATEGORY, jo.getString("type"),
                                 vl.DECOMMODITYF, vl.CDLOCATTO);
                         invItem.setCdloctype(vl.CDLOCTYPETO);
-                        invItem.setType(savedInvItem.getType());
                         invItem.setCdcategory(vl.CDCATEGORY);
+                        System.out.println("restoreSenateTags detail record:" + i+"(A20) Senate Tag#:"+vl.NUSENATE);
 
                         // System.out.println("[BEFORE:"+vl.NUSENATE+":"+invItem.getType()+"]");
 
@@ -424,6 +444,9 @@ public class Pickup2Activity extends SenateActivity
                     }
 
                     catch (NullPointerException e) {
+                        System.out.println("restoreSenateTags NULLPOINTER EXCEPTION detail record :" + i+"(A20) Senate Tag#:"+vl.NUSENATE);
+                        e.printStackTrace();
+                        
                         // noServerResponse(nusenate);
                         return;
                     }
