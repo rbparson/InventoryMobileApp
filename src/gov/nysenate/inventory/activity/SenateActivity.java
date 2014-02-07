@@ -21,6 +21,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -214,7 +216,10 @@ public abstract class SenateActivity extends Activity implements
         String URL  = "<N/A>";
         String server = "<N/A>";
         String port = "<N/A>";
+        String dbaName = "<N/A>";
         boolean httpServer = false;
+        String ipAddress = "";
+        boolean isIpAddress = false;
         
         try {
             InputStream inputStream = assetManager.open("invApp.properties");
@@ -231,16 +236,38 @@ public abstract class SenateActivity extends Activity implements
         }
         else {
             if (URL.toUpperCase().startsWith("HTTP://")) {
+                Pattern p = Pattern.compile("((?:\\d{1,3}\\.){3}\\d{1,3})");
+                Matcher m = p.matcher(URL);
+
+                isIpAddress = m.find();
+                if (isIpAddress) {
+                    ipAddress =  m.group();
+                }
+                if (URL.matches("((?:\\d{1,3}\\.){3}\\d{1,3})")) {
+                    isIpAddress = true;
+                    System.out.println ("IP ADDRESS");
+                }
+                else {
+                    System.out.println ("NOT IP ADDRESS");
+                }
+                
                 int period = URL.indexOf(".");
-                int colon = URL.indexOf(":");
+                int colon = URL.indexOf(":", 5);
                 if (period>-1) {
-                    server = URL.substring(0, period);
+                    if (isIpAddress) {
+                        server = ipAddress;
+                    }
+                    else {
+                        server = URL.substring(0, period);
+                    }
                 }
                 if (colon>-1) {
                     port = URL.substring(colon+1);
+                    System.out.println ("port:"+port+", colon:"+colon);
                 }            
                 else {
                     port = "<N/A>";
+                    System.out.println ("port:"+port+", colon:"+colon);
                 }
                 port = port.replaceAll("\\D+", "");
                 server = server.replaceAll("(?i)HTTP://", "");
@@ -269,6 +296,7 @@ public abstract class SenateActivity extends Activity implements
         }
         
         String message;
+        
         
         if (httpServer) {
             message = "<b>Version:</b> " + version + " ("
